@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { VerseModal } from './VerseModal';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Word } from '@/types/arabic';
 
 interface WordCardProps {
-//   word: Word;
+  word: Word;
   quizResult?: boolean | undefined;
   verseDetails?: {
     arabic: string;
