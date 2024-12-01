@@ -1,3 +1,4 @@
+import { Word } from "@/types/arabic";
 import { WordCard } from "./WordCard";
 
 
