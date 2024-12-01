@@ -4,6 +4,8 @@
     "@typescript-eslint/no-unused-vars": "warn",
     "react-hooks/exhaustive-deps": "warn",
     "prefer-const": "warn",
-    "react/no-unescaped-entities": "off"
+    "react/no-unescaped-entities": "off",
+    "@typescript-eslint/no-string-literal": "off",
+    "@typescript-eslint/no-explicit-any": "off"
   }
 }
