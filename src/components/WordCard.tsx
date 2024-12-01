@@ -3,7 +3,7 @@ import { VerseModal } from './VerseModal';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface WordCardProps {
-  word: Word;
+//   word: Word;
   quizResult?: boolean | undefined;
   verseDetails?: {
     arabic: string;
