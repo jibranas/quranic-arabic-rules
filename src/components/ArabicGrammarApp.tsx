@@ -11,8 +11,16 @@ import { Words } from "@/components/Words"
 import { VerseModal } from "@/components/VerseModal"
 import { Word } from "@/types/arabic"
 
-const VERSE_DETAILS = {
-  // Al-Baqarah, 30
+interface VerseDetail {
+  arabic: string;
+  translation: string;
+}
+
+interface VerseDetails {
+  [key: string]: VerseDetail;
+}
+
+const VERSE_DETAILS: VerseDetails = {
   "Al-Baqarah-30": {
     arabic: "وَإِذْ قَالَ رَبُّكَ لِلْمَلَائِكَةِ إِنِّي جَاعِلٌ فِي الْأَرْضِ خَلِيفَةً",
     translation: "And [mention, O Muhammad], when your Lord said to the angels, 'Indeed, I will make upon the earth a successive authority.'"
