@@ -38,6 +38,9 @@ export function VerseModal({ isOpen, onClose, verse }: VerseModalProps) {
     const normalizedText = normalizeArabic(text);
     const normalizedWord = normalizeArabic(wordToHighlight);
 
+    console.log('Normalized text:', normalizedText);
+    console.log('Normalized word:', normalizedWord);
+
     // Find the word boundaries in the original text
     const words = text.split(/\s+/);
     const normalizedWords = words.map(w => normalizeArabic(w));

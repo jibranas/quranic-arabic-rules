@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css'
-import { BookOpen, List, User, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { BookOpen, List, User, ChevronRight } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Quiz } from "@/components/Quiz"
@@ -227,7 +227,7 @@ const ArabicGrammarApp = () => {
         }])
       }
     }
-  }, [currentExampleIndex, currentRuleIndex, showingExamples])
+  }, [currentExampleIndex, currentRuleIndex, showingExamples, learnedWords, rules])
 
   const showNextExample = () => {
     const currentRule = rules[currentRuleIndex];
