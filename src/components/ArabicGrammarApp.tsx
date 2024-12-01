@@ -371,7 +371,6 @@ const ArabicGrammarApp = () => {
       <h2 className="text-2xl font-bold mb-4">Learned Words</h2>
       <Words 
         words={learnedWords} 
-        onDelete={handleDelete} 
         quizResults={quizResults}
         verseDetails={VERSE_DETAILS}
       />
