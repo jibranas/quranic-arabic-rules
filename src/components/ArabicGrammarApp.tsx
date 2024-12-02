@@ -10,6 +10,9 @@ import { Quiz } from "@/components/Quiz"
 import { Words } from "@/components/Words"
 import { VerseModal } from "@/components/VerseModal"
 import { Word } from "@/types/arabic"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface VerseDetail {
   arabic: string;
@@ -217,6 +220,11 @@ const ArabicGrammarApp = () => {
   ])
 
   const [quizResults, setQuizResults] = useState<{ [key: string]: boolean }>({});
+  const [isSignupOpen, setIsSignupOpen] = useState(false)
+  const [email, setEmail] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
+  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false)
 
   const totalQuranWords = 77430 // Total words in the Quran
   const progress = (learnedWords.length / totalQuranWords) * 100
@@ -277,6 +285,38 @@ const ArabicGrammarApp = () => {
     const newQuizResults = { ...quizResults };
     delete newQuizResults[word.arabic];
     setQuizResults(newQuizResults);
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Something went wrong');
+        return;
+      }
+
+      setIsSubmitSuccess(true);
+      setEmail('');
+      setError('');
+      
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError('An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const LearnTab = () => {
@@ -381,7 +421,19 @@ const ArabicGrammarApp = () => {
     <div className="flex flex-col h-screen max-w-md mx-auto bg-gray-100 text-gray-800">
       {/* Header */}
       <header className="flex justify-between items-center p-4 bg-emerald-600 text-white">
-        <h1 className="text-xl font-bold">Arabic Grammar</h1>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold">Arabic Grammar</h1>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-black hover:bg-black/90 text-white border-black/20"
+              onClick={() => setIsSignupOpen(true)}
+            >
+              Get Early Access
+            </Button>
+          </div>
+        </div>
         <div className="w-12 h-12">
           <CircularProgressbar 
             value={progress} 
@@ -396,6 +448,52 @@ const ArabicGrammarApp = () => {
           />
         </div>
       </header>
+
+      {/* Dialog */}
+      <Dialog open={isSignupOpen} onOpenChange={(open) => {
+        setIsSignupOpen(open);
+        if (!open) {
+          setIsSubmitSuccess(false); // Reset success state when dialog is closed
+        }
+      }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Get Notified When the App is Released</DialogTitle>
+          </DialogHeader>
+          {isSubmitSuccess ? (
+            <div className="py-8 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <p className="mt-2 text-sm text-gray-600">Thank you for joining the waitlist!</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSignup}>
+              <div className="grid gap-4 py-4">
+                <div className="flex flex-col gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  {error && (
+                    <p className="text-sm text-red-500">{error}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Submit"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Main Content */}
       <main className="flex-grow p-4 overflow-y-auto">
