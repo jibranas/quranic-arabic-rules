@@ -453,10 +453,10 @@ const ArabicGrammarApp = () => {
       <Dialog open={isSignupOpen} onOpenChange={(open) => {
         setIsSignupOpen(open);
         if (!open) {
-          setIsSubmitSuccess(false); // Reset success state when dialog is closed
+          setIsSubmitSuccess(false);
         }
       }}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] fixed top-[20%] left-[50%] translate-x-[-50%] translate-y-0">
           <DialogHeader>
             <DialogTitle>Get Notified When the App is Released</DialogTitle>
           </DialogHeader>
