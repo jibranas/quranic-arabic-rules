@@ -551,4 +551,3 @@ const ArabicGrammarApp = () => {
 }
 
 export default ArabicGrammarApp
-
