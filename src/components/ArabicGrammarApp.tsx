@@ -127,13 +127,18 @@ const VERSE_DETAILS: VerseDetails = {
 const ArabicGrammarApp = () => {
   const [learnedWords, setLearnedWords] = useState<{ arabic: string; translation: string; rule: string; surah: string; ayah: number; explanation: string }[]>([])
   const [showingExamples, setShowingExamples] = useState(false)
+  const [showingVocabulary, setShowingVocabulary] = useState(false)
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0)
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0)
+  const [currentVocabIndex, setCurrentVocabIndex] = useState(0)
   const [activeTab, setActiveTab] = useState("learn")
   const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null)
   const [rules, setRules] = useState([
     {
       rule: "In Arabic, verbs may come before the subject in a sentence.",
+      vocabulary: [
+        { word: "اللهُ", translation: "Allah", type: "Ism (Noun)" },
+      ],
       examples: [
         {
           arabic: "قَالَ اللهُ",
@@ -167,6 +172,11 @@ const ArabicGrammarApp = () => {
     },
     {
       rule: "In Arabic, adjectives come after the noun they describe.",
+      vocabulary: [
+        { word: "كِتَابٌ", translation: "letter/book", type: "Ism (Noun)" },
+        { word: "بَلَدٌ", translation: "city", type: "Ism (Noun)" },
+        { word: "عَذَابٌ", translation: "punishment", type: "Ism (Noun)" },
+      ],
       examples: [
         {
           arabic: "كِتَابٌ كَرِيمٌ",
@@ -193,6 +203,10 @@ const ArabicGrammarApp = () => {
     },
     {
       rule: "In Arabic, the definite article 'ال' (al) is attached to the beginning of a word to make it definite.",
+      vocabulary: [
+        { word: "كِتَابُ", translation: "book", type: "Ism (Noun)" },
+        { word: "عَالَمٌ", translation: "world", type: "Ism (Noun)" },
+      ],
       examples: [
         {
           arabic: "الْكِتَابُ",
@@ -319,10 +333,21 @@ const ArabicGrammarApp = () => {
     }
   };
 
+  const handleNextVocab = () => {
+    if (currentVocabIndex < rules[currentRuleIndex].vocabulary.length - 1) {
+      setCurrentVocabIndex(currentVocabIndex + 1);
+    } else {
+      setShowingVocabulary(false);
+      setShowingExamples(true);
+      setCurrentVocabIndex(0);
+    }
+  };
+
   const LearnTab = () => {
     const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
     const currentRule = rules[currentRuleIndex];
     const currentExample = currentRule.examples[currentExampleIndex];
+    const currentVocab = currentRule.vocabulary[currentVocabIndex];
     const unlearned = currentRule.examples.filter(example => 
       !learnedWords.some(word => word.arabic === example.arabic)
     );
@@ -335,14 +360,14 @@ const ArabicGrammarApp = () => {
           <p>{currentRule.rule}</p>
         </section>
 
-        {!showingExamples ? (
+        {!showingExamples && !showingVocabulary ? (
           unlearned.length > 0 ? (
-            // Show Examples Button
+            // Show Vocabulary Button
             <button 
-              onClick={() => setShowingExamples(true)}
+              onClick={() => setShowingVocabulary(true)}
               className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition duration-300 mb-4"
             >
-              Show me examples
+              Learn New Words
             </button>
           ) : (
             // All examples learned for this rule
@@ -356,6 +381,27 @@ const ArabicGrammarApp = () => {
               </button>
             </div>
           )
+        ) : showingVocabulary ? (
+          // Updated Vocabulary Section
+          <section className="mb-4 bg-white rounded-lg p-4 shadow">
+            <h2 className="text-lg font-semibold mb-2">New Word:</h2>
+            <div className="text-center mb-4">
+              <p className="text-3xl mb-2 font-arabic">{currentVocab.word}</p>
+              <p className="text-lg"><strong>Translation:</strong> {currentVocab.translation}</p>
+            </div>
+            <div className="flex justify-between">
+              <button 
+                onClick={handleNextVocab}
+                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center"
+              >
+                {currentVocabIndex < currentRule.vocabulary.length - 1 ? 'Next Word' : 'See Examples'}
+                <ChevronRight className="ml-2" size={20} />
+              </button>
+              <span className="text-sm text-gray-500">
+                {currentVocabIndex + 1} of {currentRule.vocabulary.length}
+              </span>
+            </div>
+          </section>
         ) : (
           // Quranic Example
           <section className="mb-4 bg-white rounded-lg p-4 shadow">
@@ -406,16 +452,103 @@ const ArabicGrammarApp = () => {
     )
   }
 
-  const WordsTab = () => (
-    <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border p-4">
-      <h2 className="text-2xl font-bold mb-4">Learned Words</h2>
-      <Words 
-        words={learnedWords} 
-        quizResults={quizResults}
-        verseDetails={VERSE_DETAILS}
-      />
-    </ScrollArea>
-  )
+  const WordsTab = () => {
+    const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
+    const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null);
+    const [selectedVerse, setSelectedVerse] = useState<{
+      arabic: string;
+      translation: string;
+      surah: string;
+      ayah: number;
+      highlightText: string;
+    } | null>(null);
+
+    // Get all vocabulary words from rules
+    const vocabularyWords = rules.flatMap(rule => 
+      rule.vocabulary.map(v => v.word)
+    );
+
+    // Group examples by vocabulary words only
+    const groupedWords = vocabularyWords.reduce((acc, vocabWord) => {
+      acc[vocabWord] = learnedWords.filter(example => 
+        example.arabic.includes(vocabWord)
+      );
+      return acc;
+    }, {} as { [key: string]: typeof learnedWords });
+
+    const handleVerseClick = (example: typeof learnedWords[0]) => {
+      setSelectedVerse({
+        arabic: VERSE_DETAILS[`${example.surah}-${example.ayah}`]?.arabic || '',
+        translation: VERSE_DETAILS[`${example.surah}-${example.ayah}`]?.translation || '',
+        surah: example.surah,
+        ayah: example.ayah,
+        highlightText: example.arabic
+      });
+      setIsVerseModalOpen(true);
+    };
+
+    return (
+      <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border p-4">
+        <h2 className="text-2xl font-bold mb-4">Learned Words</h2>
+        {Object.entries(groupedWords)
+          .filter(([_, examples]) => examples.length > 0)
+          .map(([vocabWord, examples], wordIndex) => {
+            const translation = rules
+              .flatMap(rule => rule.vocabulary)
+              .find(v => v.word === vocabWord)?.translation;
+
+            return (
+              <div key={vocabWord} className="mb-2 bg-white rounded-lg shadow">
+                <button
+                  onClick={() => setExpandedWordIndex(expandedWordIndex === wordIndex ? null : wordIndex)}
+                  className="w-full p-4 text-left flex justify-between items-center hover:bg-gray-50"
+                >
+                  <div>
+                    <h3 className="text-xl font-arabic mb-1">{vocabWord}</h3>
+                    <p className="text-sm text-gray-600">{translation}</p>
+                  </div>
+                  <ChevronRight 
+                    className={`transform transition-transform duration-200 ${
+                      expandedWordIndex === wordIndex ? 'rotate-90' : ''
+                    }`}
+                  />
+                </button>
+                
+                {expandedWordIndex === wordIndex && (
+                  <div className="p-4 border-t">
+                    <div className="space-y-4">
+                      {examples.map((example, index) => (
+                        <div key={index} className="border-b last:border-b-0 pb-4">
+                          <div className="text-right font-arabic mb-2">{example.arabic}</div>
+                          <div className="text-sm text-gray-600 mb-2">{example.translation}</div>
+                          <div className="text-sm text-gray-500 mb-2">
+                            <strong>Rule:</strong> {example.rule}
+                          </div>
+                          <button 
+                            onClick={() => handleVerseClick(example)}
+                            className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
+                          >
+                            View in Surah {example.surah}, Ayah {example.ayah}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+        })}
+
+        {selectedVerse && (
+          <VerseModal
+            isOpen={isVerseModalOpen}
+            onClose={() => setIsVerseModalOpen(false)}
+            verse={selectedVerse}
+          />
+        )}
+      </ScrollArea>
+    );
+  };
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto bg-gray-100 text-gray-800">
