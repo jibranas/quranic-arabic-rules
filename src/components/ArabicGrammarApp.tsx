@@ -41,6 +41,26 @@ interface Question {
   correctAnswer: string;
 }
 
+interface Example {
+  arabic: string;
+  lemma: string | string[];
+  translation: string;
+  explanation: string;
+  surah: string;
+  audio: string;
+  ayah: number;
+}
+
+interface Rule {
+  rule: string;
+  vocabulary: {
+    word: string;
+    translation: string;
+    type: string;
+  }[];
+  examples: Example[];
+}
+
 const VERSE_DETAILS: VerseDetails = {
   "Al-Baqarah-30": {
     arabic: "وَإِذْ قَالَ رَبُّكَ لِلْمَلَائِكَةِ إِنِّي جَاعِلٌ فِي الْأَرْضِ خَلِيفَةً",
@@ -155,7 +175,7 @@ const ArabicGrammarApp = () => {
   const [currentVocabIndex, setCurrentVocabIndex] = useState(0)
   const [activeTab, setActiveTab] = useState("learn")
   const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null)
-  const [rules, setRules] = useState([
+  const [rules, setRules] = useState<Rule[]>([
     {
       rule: "In Arabic, verbs may come before the subject in a sentence.",
       vocabulary: [
@@ -422,14 +442,19 @@ const ArabicGrammarApp = () => {
     const ruleIndex = rules.findIndex(r => r.rule === rule);
     if (ruleIndex !== -1) {
       setCurrentRuleIndex(ruleIndex);
-      const unlearned = rules[ruleIndex].examples.filter(example => 
+      const currentRuleExamples = rules[ruleIndex].examples;
+      
+      // Find the first unlearned example
+      const firstUnlearnedIndex = currentRuleExamples.findIndex(example => 
         !learnedWords.some(word => word.arabic === example.arabic)
       );
-      setCurrentExampleIndex(unlearned.length > 0 ? rules[ruleIndex].examples.indexOf(unlearned[0]) : 0);
-      setShowingExamples(unlearned.length > 0);
+      
+      // Set to first unlearned example or 0 if all are learned
+      setCurrentExampleIndex(firstUnlearnedIndex !== -1 ? firstUnlearnedIndex : 0);
+      setShowingExamples(firstUnlearnedIndex !== -1);
       setActiveTab("learn");
     }
-  }
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
