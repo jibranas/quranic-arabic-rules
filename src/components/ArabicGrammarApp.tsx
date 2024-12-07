@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css'
-import { BookOpen, List, User, ChevronRight, Brain } from 'lucide-react'
+import { BookOpen, List, User, ChevronRight, Brain, Volume2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Quiz } from "@/components/Quiz"
@@ -143,6 +143,9 @@ const VERSE_DETAILS: VerseDetails = {
 };
 
 const ArabicGrammarApp = () => {
+  // Move audioRef to parent component
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const [learnedWords, setLearnedWords] = useState<{ arabic: string; translation: string; rule: string; surah: string; ayah: number; explanation: string }[]>([])
   const [questions, setQuestions] = useState<Question[]>([]);
   const [showingExamples, setShowingExamples] = useState(false)
@@ -165,6 +168,7 @@ const ArabicGrammarApp = () => {
           translation: "Allah said",
           explanation: "The verb 'قَالَ' (said) comes before the subject 'اللهُ' (Allah).",
           surah: "Al-Maidah",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled.mp3",
           ayah: 116
         },
         {
@@ -173,6 +177,7 @@ const ArabicGrammarApp = () => {
           translation: "Allah knows",
           explanation: "The verb 'يَعْلَمُ' (knows) comes before the subject 'اللهُ' (Allah).",
           surah: "An-Nisa",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-2.mp3",
           ayah: 63
         },
         {
@@ -181,6 +186,7 @@ const ArabicGrammarApp = () => {
           translation: "Allah created",
           explanation: "The verb 'يَخْلُقُ' (creates) comes before the subject 'اللهُ' (Allah).",
           surah: "An-Nur",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-3.mp3",
           ayah: 45
         },
         {
@@ -189,6 +195,7 @@ const ArabicGrammarApp = () => {
           translation: "Allah wishes",
           explanation: "The verb 'يُرِيدُ' (wishes) comes before the subject 'اللهُ' (Allah).",
           surah: "An-Nisa",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-4.mp3",
           ayah: 26
         }
       ]
@@ -210,6 +217,7 @@ const ArabicGrammarApp = () => {
           translation: "A noble letter",
           explanation: "The adjective 'كَرِيمٌ' (noble) comes after the noun 'كِتَابٌ' (letter).",
           surah: "An-Naml",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-5.mp3",
           ayah: 29
         },
         {
@@ -218,6 +226,7 @@ const ArabicGrammarApp = () => {
           translation: "A secure city",
           explanation: "The adjective 'ءَامِنًۭا' (secure) comes after the noun 'بَلَدًا' (city).",
           surah: "Al-Baqarah",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-6.mp3",
           ayah: 126
         },
         {
@@ -226,6 +235,7 @@ const ArabicGrammarApp = () => {
           translation: "A painful punishment",
           explanation: "The adjective 'أَلِيمٌ' (painful) comes after the noun 'عَذَابٌ' (punishment).",
           surah: "Al-Baqarah",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-7.mp3",
           ayah: 10
         }
       ]
@@ -244,14 +254,16 @@ const ArabicGrammarApp = () => {
           translation: "The book",
           explanation: "The definite article 'ال' is attached to 'كِتَابُ' (book) to make it 'the book'.",
           surah: "Al-Baqarah",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-8.mp3",
           ayah: 2
         },
         {
-          arabic: "الرَّحِيمُ",
+          arabic: "الرَّحِيمِ",
           lemma: "رَحِيمٌ",
           translation: "The Most Merciful",
-          explanation: "The definite article 'ال' is attached to 'رَحْمَنُ' (Merciful) to make it 'the Most Merciful'.",
+          explanation: "The definite article 'ال' is attached to 'رَحِيمٌ' (Merciful) to make it 'the Most Merciful'.",
           surah: "Al-Fatihah",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-9.mp3",
           ayah: 3
         },
         {
@@ -260,6 +272,7 @@ const ArabicGrammarApp = () => {
           translation: "The worlds",
           explanation: "The definite article 'ال' is attached to 'عَالَمِينَ' (worlds) to make it 'the worlds'.",
           surah: "Al-Fatihah",
+          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-10.mp3",
           ayah: 2
         }
       ]
@@ -303,10 +316,17 @@ const ArabicGrammarApp = () => {
     return currentRule.vocabulary.filter(v => coveredVocab.has(v.word));
   };
 
-  // Modify showNextRule to show word summary first
+  // Modify showNextRule to use the moved audioRef
   const showNextRule = () => {
+    // Clean up audio if it exists
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
     if (!showingWordSummary && coveredExamples.size > 0) {
       setShowingWordSummary(true);
+      setShowingExamples(false);
       return;
     }
 
@@ -388,6 +408,12 @@ const ArabicGrammarApp = () => {
       // Still have examples in current rule
       setCurrentExampleIndex(currentExampleIndex + 1);
     } else {
+      // Clean up audio before showing word summary
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setShowingExamples(false);
       showNextRule();
     }
   };
@@ -453,12 +479,15 @@ const ArabicGrammarApp = () => {
     const otherTranslations = learnedWords
       .filter(w => w.translation !== word.translation)
       .map(w => w.translation);
-
-    // Ensure we have enough options
+    
+    // Shuffle and take first 3 other translations
+    const otherOptions = shuffleArray(otherTranslations).slice(0, 3);
+    
+    // Always include the correct answer and shuffle final options
     const options = shuffleArray([
-      word.translation,
-      ...otherTranslations
-    ]).slice(0, 4);
+      word.translation,  // Ensure correct answer is included
+      ...otherOptions
+    ]);
 
     return {
       type: 'vocabulary',
@@ -554,7 +583,7 @@ const ArabicGrammarApp = () => {
     return null;
   };
 
-  // Modify LearnTab to include WordSummary
+  // Modify LearnTab to accept audioRef as prop
   const LearnTab = () => {
     const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
     const currentRule = rules[currentRuleIndex];
@@ -562,6 +591,41 @@ const ArabicGrammarApp = () => {
     const unlearned = currentRule.examples.filter(example => 
       !learnedWords.some(word => word.arabic === example.arabic)
     );
+
+    useEffect(() => {
+      if (showingExamples && currentExample?.audio) {
+        // Clean up previous audio if it exists
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+
+        // Create new audio instance
+        audioRef.current = new Audio(currentExample.audio);
+        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
+
+        // Cleanup function
+        return () => {
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+          }
+        };
+      }
+    }, [showingExamples, currentExampleIndex]);
+
+    // Modify the audio button click handler
+    const handleAudioPlay = () => {
+      if (audioRef.current) {
+        // If audio exists, reset and play
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
+      } else if (currentExample?.audio) {
+        // If no audio instance exists, create new one
+        audioRef.current = new Audio(currentExample.audio);
+        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
+      }
+    };
 
     return (
       <>
@@ -601,14 +665,25 @@ const ArabicGrammarApp = () => {
             <p className="text-sm text-gray-500 mb-2">
               Example {currentExampleIndex + 1} of {currentRule.examples.length}
             </p>
-            <p className="text-2xl mb-1 text-right font-arabic">{currentExample.arabic}</p>
+            <div className="flex justify-end items-center  gap-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleAudioPlay}
+                className="h-8 w-8 text-blue-500"
+                title="Play Audio"
+              >
+                <Volume2 className="h-4 w-4" />
+              </Button>
+              <p className="text-2xl font-arabic">{currentExample.arabic}</p>
+            </div>
+            <p className="text-lg text-gray-700 text-right">{currentExample.translation}</p>
             <button 
               onClick={() => setIsVerseModalOpen(true)}
               className="text-xs mb-2 text-right text-blue-500 hover:text-blue-700 hover:underline block w-full"
             >
               Surah {currentExample.surah}, Ayah {currentExample.ayah}
             </button>
-            <p className="mb-2"><strong>Translation:</strong> {currentExample.translation}</p>
             <p className="mb-4"><strong>Explanation:</strong> {currentExample.explanation}</p>
             <div className="flex flex-col gap-2">
               {currentExampleIndex === currentRule.examples.length - 1 ? (
@@ -781,7 +856,74 @@ const ArabicGrammarApp = () => {
       setIsQuizActive(true);
     };
 
-    // Modify the existing words view to be its own function
+    // Keep getPerformanceStats the same
+    const getPerformanceStats = (examples: typeof learnedWords) => {
+      let green = 0, yellow = 0, red = 0;
+      
+      examples.forEach(example => {
+        const performance = getExamplePerformance(example.arabic);
+        if (performance === 'green') green++;
+        else if (performance === 'yellow') yellow++;
+        else if (performance === 'red') red++;
+      });
+      
+      return { green, yellow, red };
+    };
+
+    // Replace PerformanceIndicators with new version
+    const PerformanceBar = ({ stats }: { stats: { green: number, yellow: number, red: number } }) => {
+      const total = stats.green + stats.yellow + stats.red;
+      if (total === 0) return null;
+
+      const greenWidth = (stats.green / total) * 100;
+      const yellowWidth = (stats.yellow / total) * 100;
+      const redWidth = (stats.red / total) * 100;
+
+      return (
+        <div className="flex w-20 h-2 rounded-full overflow-hidden bg-gray-200">
+          {stats.green > 0 && (
+            <div 
+              className="h-full bg-green-500"
+              style={{ width: `${greenWidth}%` }}
+            />
+          )}
+          {stats.yellow > 0 && (
+            <div 
+              className="h-full bg-yellow-500"
+              style={{ width: `${yellowWidth}%` }}
+            />
+          )}
+          {stats.red > 0 && (
+            <div 
+              className="h-full bg-red-500"
+              style={{ width: `${redWidth}%` }}
+            />
+          )}
+        </div>
+      );
+    };
+
+    // Add handleAudioPlay function
+    const handleAudioPlay = (exampleArabic: string) => {
+      // Find the example in rules to get its audio
+      const example = rules
+        .flatMap(rule => rule.examples)
+        .find(ex => ex.arabic === exampleArabic);
+
+      if (example?.audio) {
+        // Clean up previous audio if it exists
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+
+        // Create and play new audio
+        audioRef.current = new Audio(example.audio);
+        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
+      }
+    };
+
+    // Update the example rendering in renderWordsView
     const renderWordsView = () => {
       return (
         <>
@@ -791,6 +933,8 @@ const ArabicGrammarApp = () => {
               const translation = rules
                 .flatMap(rule => rule.vocabulary)
                 .find(v => v.word === vocabWord)?.translation;
+              
+              const stats = getPerformanceStats(examples);
 
               return (
                 <div key={vocabWord} className="mb-2 bg-white rounded-lg shadow">
@@ -802,11 +946,14 @@ const ArabicGrammarApp = () => {
                       <h3 className="text-xl font-arabic mb-1">{vocabWord}</h3>
                       <p className="text-sm text-gray-600">{translation}</p>
                     </div>
-                    <ChevronRight 
-                      className={`transform transition-transform duration-200 ${
-                        expandedWordIndex === wordIndex ? 'rotate-90' : ''
-                      }`}
-                    />
+                    <div className="flex items-center gap-4">
+                      <PerformanceBar stats={stats} />
+                      <ChevronRight 
+                        className={`transform transition-transform duration-200 ${
+                          expandedWordIndex === wordIndex ? 'rotate-90' : ''
+                        }`}
+                      />
+                    </div>
                   </button>
                   
                   {expandedWordIndex === wordIndex && (
@@ -827,8 +974,25 @@ const ArabicGrammarApp = () => {
                               className={`${bgColor} border-b last:border-b-0 pb-4 rounded-lg p-4 transition-colors duration-300`}
                             >
                               <div className="text-right mb-4">
-                                <div className="text-2xl font-arabic mb-1">{example.arabic}</div>
+                                <div className="flex justify-end items-center gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleAudioPlay(example.arabic)}
+                                    className="h-8 w-8 text-blue-500"
+                                    title="Play Audio"
+                                  >
+                                    <Volume2 className="h-4 w-4" />
+                                  </Button>
+                                  <div className="text-2xl font-arabic">{example.arabic}</div>
+                                </div>
                                 <div className="text-lg text-gray-700">{example.translation}</div>
+                                <button 
+                                  onClick={() => handleVerseClick(example)}
+                                  className="text-xs mb-2 text-right text-blue-500 hover:text-blue-700 hover:underline block w-full"
+                                >
+                                  Surah {example.surah}, Ayah {example.ayah}
+                                </button>
                               </div>
                               <div className="text-sm text-gray-500 mb-2">
                                 <strong>Rule:</strong> {example.rule}
@@ -836,21 +1000,15 @@ const ArabicGrammarApp = () => {
                               <div className="text-sm text-gray-500 mb-2">
                                 <strong>Explanation:</strong> {example.explanation}
                               </div>
-                              <div className="flex gap-2">
-                                <button 
-                                  onClick={() => handleVerseClick(example)}
-                                  className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
-                                >
-                                  View in Surah {example.surah}, Ayah {example.ayah}
-                                </button>
+                              <div className="flex justify-center mt-4">
                                 <Button
                                   size="icon"
                                   variant="ghost"
                                   onClick={() => handlePracticeExample(example)}
-                                  className="ml-auto h-8 w-8"
+                                  className="h-8 w-8"
                                   title="Practice This Example"
                                 >
-                                  <Brain className="h-4 w-4" />
+                                  <Brain className="h-4 w-4" /> <span className="text-xs">Practice Example</span>
                                 </Button>
                               </div>
                             </div>
@@ -866,7 +1024,7 @@ const ArabicGrammarApp = () => {
       );
     };
 
-    // Add new function to render rules view
+    // Update the example rendering in renderRulesView
     const renderRulesView = () => {
       const groupedByRules = rules.map(rule => ({
         rule: rule.rule,
@@ -875,72 +1033,90 @@ const ArabicGrammarApp = () => {
 
       return (
         <>
-          {groupedByRules.map((group, ruleIndex) => (
-            <div key={ruleIndex} className="mb-2 bg-white rounded-lg shadow">
-              <button
-                onClick={() => setExpandedWordIndex(expandedWordIndex === ruleIndex ? null : ruleIndex)}
-                className="w-full p-4 text-left flex justify-between items-center hover:bg-gray-50"
-              >
-                <div>
-                  <h3 className="text-lg font-semibold">{group.rule}</h3>
-                  <p className="text-sm text-gray-600">{group.examples.length} examples</p>
-                </div>
-                <ChevronRight 
-                  className={`transform transition-transform duration-200 ${
-                    expandedWordIndex === ruleIndex ? 'rotate-90' : ''
-                  }`}
-                />
-              </button>
-              
-              {expandedWordIndex === ruleIndex && (
-                <div className="p-4 border-t">
-                  <div className="space-y-4">
-                    {group.examples.map((example, index) => {
-                      const performance = getExamplePerformance(example.arabic);
-                      
-                      // Define background color based on performance
-                      let bgColor = 'bg-white';
-                      if (performance === 'green') bgColor = 'bg-green-100';
-                      if (performance === 'yellow') bgColor = 'bg-yellow-100';
-                      if (performance === 'red') bgColor = 'bg-red-100';
+          {groupedByRules.map((group, ruleIndex) => {
+            const stats = getPerformanceStats(group.examples);
 
-                      return (
-                        <div 
-                          key={index} 
-                          className={`${bgColor} border-b last:border-b-0 pb-4 rounded-lg p-4 transition-colors duration-300`}
-                        >
-                          <div className="text-right mb-4">
-                            <div className="text-2xl font-arabic mb-1">{example.arabic}</div>
-                            <div className="text-lg text-gray-700">{example.translation}</div>
-                          </div>
-                          <div className="text-sm text-gray-500 mb-2">
-                            <strong>Explanation:</strong> {example.explanation}
-                          </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleVerseClick(example)}
-                              className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
-                            >
-                              View in Surah {example.surah}, Ayah {example.ayah}
-                            </button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handlePracticeExample(example)}
-                              className="ml-auto h-8 w-8"
-                              title="Practice This Example"
-                            >
-                              <Brain className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
+            return (
+              <div key={ruleIndex} className="mb-2 bg-white rounded-lg shadow">
+                <button
+                  onClick={() => setExpandedWordIndex(expandedWordIndex === ruleIndex ? null : ruleIndex)}
+                  className="w-full p-4 text-left flex justify-between items-center hover:bg-gray-50"
+                >
+                  <div>
+                    <h3 className="text-lg font-semibold">{group.rule}</h3>
+                    <p className="text-sm text-gray-600">{group.examples.length} examples</p>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                  <div className="flex items-center gap-4">
+                    <PerformanceBar stats={stats} />
+                    <ChevronRight 
+                      className={`transform transition-transform duration-200 ${
+                        expandedWordIndex === ruleIndex ? 'rotate-90' : ''
+                      }`}
+                    />
+                  </div>
+                </button>
+                
+                {expandedWordIndex === ruleIndex && (
+                  <div className="p-4 border-t">
+                    <div className="space-y-4">
+                      {group.examples.map((example, index) => {
+                        const performance = getExamplePerformance(example.arabic);
+                        
+                        // Define background color based on performance
+                        let bgColor = 'bg-white';
+                        if (performance === 'green') bgColor = 'bg-green-100';
+                        if (performance === 'yellow') bgColor = 'bg-yellow-100';
+                        if (performance === 'red') bgColor = 'bg-red-100';
+
+                        return (
+                          <div 
+                            key={index} 
+                            className={`${bgColor} border-b last:border-b-0 pb-4 rounded-lg p-4 transition-colors duration-300`}
+                          >
+                            <div className="text-right mb-4">
+                              <div className="flex justify-end items-center gap-2">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => handleAudioPlay(example.arabic)}
+                                  className="h-8 w-8 text-blue-500"
+                                  title="Play Audio"
+                                >
+                                  <Volume2 className="h-4 w-4" />
+                                </Button>
+                                <div className="text-2xl font-arabic">{example.arabic}</div>
+                              </div>
+                              <div className="text-lg text-gray-700">{example.translation}</div>
+                              <button 
+                                onClick={() => handleVerseClick(example)}
+                                className="text-xs mb-2 text-right text-blue-500 hover:text-blue-700 hover:underline block w-full"
+                              >
+                                Surah {example.surah}, Ayah {example.ayah}
+                              </button>
+                            </div>
+                            <div className="text-sm text-gray-500 mb-2">
+                              <strong>Explanation:</strong> {example.explanation}
+                            </div>
+                            <div className="flex justify-center mt-4">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handlePracticeExample(example)}
+                                className="h-8 w-8"
+                                title="Practice This Example"
+                              >
+                                <Brain className="h-4 w-4" /> <span className="text-xs">Practice Example</span>
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </>
       );
     };
@@ -975,7 +1151,7 @@ const ArabicGrammarApp = () => {
             size="lg"
             variant="default"
           >
-            Practice All Words
+          <Brain className="h-4 w-4" />  Practice All 
           </Button>
         </div>
 
@@ -1102,13 +1278,7 @@ const ArabicGrammarApp = () => {
     <List size={24} />
     <span className="text-xs mt-1">Words</span>
   </button>
-  <button 
-    className={`flex flex-col items-center ${activeTab === 'quiz' ? 'text-emerald-600' : 'text-gray-500'}`}
-    onClick={() => setActiveTab('quiz')}
-  >
-    <BookOpen size={24} />
-    <span className="text-xs mt-1">Quiz</span>
-  </button>
+  
   <button className="flex flex-col items-center text-gray-500">
     <User size={24} />
     <span className="text-xs mt-1">Profile</span>
