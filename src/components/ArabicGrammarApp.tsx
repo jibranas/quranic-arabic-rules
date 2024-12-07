@@ -180,11 +180,14 @@ const ArabicGrammarApp = () => {
       rule: "In Arabic, verbs may come before the subject in a sentence.",
       vocabulary: [
         { word: "اللهُ", translation: "Allah", type: "Ism (Noun)" },
+        { word: "يَخْلُقُ", translation: "Creates", type: "Fa'l (Verb)" },
+        { word: "يَعْلَمُ", translation: "Knows", type: "Fa'l (Verb)" },
+        { word: "قَالَ", translation: "Said", type: "Fa'l (Verb)" },
       ],
       examples: [
         {
           arabic: "قَالَ اللهُ",
-          lemma: "اللهُ",
+          lemma: ["قَالَ", "اللهُ"],
           translation: "Allah said",
           explanation: "The verb 'قَالَ' (said) comes before the subject 'اللهُ' (Allah).",
           surah: "Al-Maidah",
@@ -193,7 +196,7 @@ const ArabicGrammarApp = () => {
         },
         {
           arabic: "يَعْلَمُ اللهُ",
-          lemma: "اللهُ",
+          lemma: ["يَعْلَمُ", "اللهُ"],
           translation: "Allah knows",
           explanation: "The verb 'يَعْلَمُ' (knows) comes before the subject 'اللهُ' (Allah).",
           surah: "An-Nisa",
@@ -202,7 +205,7 @@ const ArabicGrammarApp = () => {
         },
         {
           arabic: "يَخْلُقُ اللهُ",
-          lemma: "اللهُ",
+          lemma: ["يَخْلُقُ", "اللهُ"],
           translation: "Allah created",
           explanation: "The verb 'يَخْلُقُ' (creates) comes before the subject 'اللهُ' (Allah).",
           surah: "An-Nur",
@@ -211,7 +214,7 @@ const ArabicGrammarApp = () => {
         },
         {
           arabic: "يُرِيدُ اللهُ",
-          lemma: "اللهُ",
+          lemma: ["يُرِيدُ", "اللهُ"],
           translation: "Allah wishes",
           explanation: "The verb 'يُرِيدُ' (wishes) comes before the subject 'اللهُ' (Allah).",
           surah: "An-Nisa",
