@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Word } from "@/types/arabic";
+import { Word, Question } from "@/types/arabic";
 import { shuffleArray } from "@/lib/utils";
 
 interface QuizProps {
