@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css'
-import { BookOpen, List, User, ChevronRight, Brain, Volume2 } from 'lucide-react'
+import { BookOpen, List, User, ChevronRight, Brain, Volume2, Book } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Quiz } from "@/components/Quiz"
@@ -16,6 +16,11 @@ import { motion } from 'framer-motion'
 import { CheckIcon } from 'lucide-react'
 import { shuffleArray } from "@/lib/utils"
 import { QuizOverlay } from "@/components/QuizOverlay"
+import { LearnOverlay } from "@/components/LearnOverlay"
+import { QuranOverlay } from "@/components/QuranOverlay"
+import { rules as initialRules } from '../../data/rules'
+import { verses as VERSE_DETAILS } from '../../data/verses'
+import { LettersOverlay } from "@/components/LettersOverlay"
 
 interface VerseDetail {
   arabic: string;
@@ -52,6 +57,7 @@ interface Example {
 }
 
 interface Rule {
+  title: string;
   rule: string;
   vocabulary: {
     word: string;
@@ -61,106 +67,9 @@ interface Rule {
   examples: Example[];
 }
 
-const VERSE_DETAILS: VerseDetails = {
-  "Al-Baqarah-30": {
-    arabic: "وَإِذْ قَالَ رَبُّكَ لِلْمَلَائِكَةِ إِنِّي جَاعِلٌ فِي الْأَرْضِ خَلِيفَةً",
-    translation: "And [mention, O Muhammad], when your Lord said to the angels, 'Indeed, I will make upon the earth a successive authority.'"
-  },
-  "An-Nisa-63": {
-    arabic: "أُولَٰئِكَ الَّذِينَ يَعْلَمُ اللَّهُ مَا فِي قُلُوبِهِمْ فَأَعْرِضْ عَنْهُمْ وَعِظْهُمْ وَقُلْ لَهُمْ فِي أَنفُسِهِمْ قَوْلًا بَلِيغًا",
-    translation: "Those are the ones of whom Allah knows what is in their hearts, so turn away from them but admonish them and speak to them a far-reaching word."
-  },
-  "Al-Maidah-116": {
-    arabic: "وَإِذْ قَالَ اللَّهُ يَا عِيسَى ابْنَ مَرْيَمَ أَأَنتَ قُلتَ لِلنَّاسِ اتَّخِذُونِي وَأُمِّيَ إِلَٰهَيْنِ مِن دُونِ اللَّهِ",
-    translation: "And [beware the Day] when Allah will say, 'O Jesus, Son of Mary, did you say to the people, 'Take me and my mother as deities besides Allah?'"
-  },
-  // Al-Baqarah, 77
-  "Al-Baqarah-77": {
-    arabic: "أَوَلَا يَعْلَمُونَ أَنَّ اللَّهَ يَعْلَمُ مَا يُسِرُّونَ وَمَا يُعْلِنُونَ",
-    translation: "Do they not know that Allah knows what they conceal and what they declare?"
-  },
-  // An-Nur, 45
-  "An-Nur-45": {
-    arabic: "يَخْلُقُ ٱللَّهُ مَا يَشَآءُ ۚ إِنَّ ٱللَّهَ عَلَىٰ كُلِّ شَىْءٍۢ قَدِيرٌۭ",
-    translation: "Allâh creates what He wills. Verily Allâh is Able to do all things."
-  },
-
-  "An-Naml-29": {
-    arabic: "قَالَتْ يَا أَيُّهَا الْمَلَأُ إِنِّي أُلْقِيَ إِلَيَّ كِتَابٌ كَرِيمٌ",
-    translation: "She said, 'O eminent ones, indeed, to me has been delivered a noble letter.'"
-  },
-
-  "Al-Baqarah-126": {
-    arabic: "وَإِذْ قَالَ إِبْرَاهِيمُ رَبِّ اجْعَلْ هَٰذَا بَلَدًا آمِنًا",
-    translation: "And [mention] when Abraham said, 'My Lord, make this a secure city.'"
-  },
-  
-  // An-Nisa, 26
-  "An-Nisa-26": {
-    arabic: "يُرِيدُ اللَّهُ لِيُبَيِّنَ لَكُمْ وَيَهْدِيَكُمْ سُنَنَ الَّذِينَ مِن قَبْلِكُمْ وَيَتُوبَ عَلَيْكُمْ وَاللَّهُ عَلِيمٌ حَكِيمٌ",
-    translation: "Allah wants to make clear to you [the lawful from the unlawful] and guide you to the [good] practices of those before you and to accept your repentance. And Allah is Knowing and Wise."
-  },
-  // An-Nur, 38
-  "An-Nur-38": {
-    arabic: "وَاللَّهُ يَرْزُقُ مَن يَشَاءُ بِغَيْرِ حِسَابٍ",
-    translation: "And Allah provides for whom He wills without account."
-  },
-  // Ad-Dukhan, 2
-  "Ad-Dukhan-2": {
-    arabic: "وَالْكِتَابِ الْمُبِينِ",
-    translation: "By the clear Book"
-  },
-  // Al-Fatihah, 6
-  "Al-Fatihah-6": {
-    arabic: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
-    translation: "Guide us to the straight path"
-  },
-  // Al-Baqarah, 10
-  "Al-Baqarah-10": {
-    arabic: "وَلَهُمْ عَذَابٌ أَلِيمٌ بِمَا كَانُوا يَكْذِبُونَ",
-    translation: "And for them is a painful punishment because they used to lie."
-  },
-  // Al-Baqarah, 2
-  "Al-Baqarah-2": {
-    arabic: "ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ",
-    translation: "This is the Book about which there is no doubt, a guidance for those conscious of Allah"
-  },
-  // Al-Fatihah, 3
-  "Al-Fatihah-3": {
-    arabic: "الرَّحْمَٰنِ الرَّحِيمِ",
-    translation: "The Entirely Merciful, the Especially Merciful"
-  },
-  // Al-Fatihah, 2
-  "Al-Fatihah-2": {
-    arabic: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
-    translation: "All praise is due to Allah, Lord of the worlds"
-  },
-  // Al-Fatihah, 4
-  "Al-Fatihah-4": {
-    arabic: "مَالِكِ يَوْمِ الدِّينِ",
-    translation: "Sovereign of the Day of Recompense"
-  },
-  // Al-Fatihah, 7
-  "Al-Fatihah-7": {
-    arabic: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
-    translation: "The path of those upon whom You have bestowed favor, not of those who have earned [Your] anger or of those who are astray"
-  },
-  // Al-Fatihah, 1
-  "Al-Fatihah-1": {
-    arabic: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-    translation: "In the name of Allah, the Entirely Merciful, the Especially Merciful"
-  },
-  // Al-Ahzab, 23
-  "Al-Ahzab-23": {
-    arabic: "مِّنَ الْمُؤْمِنِينَ رِجَالٌ صَدَقُوا مَا عَاهَدُوا اللَّهَ عَلَيْهِ",
-    translation: "Among the believers are men true to what they promised Allah"
-  },
-  // An-Nas, 6
-  "An-Nas-6": {
-    arabic: "مِنَ الْجِنَّةِ وَالنَّاسِ",
-    translation: "From among the jinn and mankind"
-  }
-};
+interface WordsTabProps {
+  quizResults: { [key: string]: boolean[] };
+}
 
 const ArabicGrammarApp = () => {
   // Move audioRef to parent component
@@ -173,134 +82,9 @@ const ArabicGrammarApp = () => {
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0)
   const [currentRuleIndex, setCurrentRuleIndex] = useState(0)
   const [currentVocabIndex, setCurrentVocabIndex] = useState(0)
-  const [activeTab, setActiveTab] = useState("learn")
+  const [activeTab, setActiveTab] = useState("contents")
   const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null)
-  const [rules, setRules] = useState<Rule[]>([
-    {
-      rule: "In Arabic, verbs may come before the subject in a sentence.",
-      vocabulary: [
-        { word: "اللهُ", translation: "Allah", type: "Ism (Noun)" },
-        { word: "يَخْلُقُ", translation: "Creates", type: "Fa'l (Verb)" },
-        { word: "يَعْلَمُ", translation: "Knows", type: "Fa'l (Verb)" },
-        { word: "قَالَ", translation: "Said", type: "Fa'l (Verb)" },
-      ],
-      examples: [
-        {
-          arabic: "قَالَ اللهُ",
-          lemma: ["قَالَ", "اللهُ"],
-          translation: "Allah said",
-          explanation: "The verb 'قَالَ' (said) comes before the subject 'اللهُ' (Allah).",
-          surah: "Al-Maidah",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled.mp3",
-          ayah: 116
-        },
-        {
-          arabic: "يَعْلَمُ اللهُ",
-          lemma: ["يَعْلَمُ", "اللهُ"],
-          translation: "Allah knows",
-          explanation: "The verb 'يَعْلَمُ' (knows) comes before the subject 'اللهُ' (Allah).",
-          surah: "An-Nisa",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-2.mp3",
-          ayah: 63
-        },
-        {
-          arabic: "يَخْلُقُ اللهُ",
-          lemma: ["يَخْلُقُ", "اللهُ"],
-          translation: "Allah created",
-          explanation: "The verb 'يَخْلُقُ' (creates) comes before the subject 'اللهُ' (Allah).",
-          surah: "An-Nur",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-3.mp3",
-          ayah: 45
-        },
-        {
-          arabic: "يُرِيدُ اللهُ",
-          lemma: ["يُرِيدُ", "اللهُ"],
-          translation: "Allah wishes",
-          explanation: "The verb 'يُرِيدُ' (wishes) comes before the subject 'اللهُ' (Allah).",
-          surah: "An-Nisa",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-4.mp3",
-          ayah: 26
-        }
-      ]
-    },
-    {
-      rule: "In Arabic, adjectives come after the noun they describe.",
-      vocabulary: [
-        { word: "كِتَابٌ", translation: "letter/book", type: "Ism (Noun)" },
-        { word: "كَرِيمٌ", translation: "noble", type: "Ism (Noun)" },
-        { word: "آمِنًا", translation: "secure", type: "Ism (Noun)" },
-        { word: "بَلَدًا", translation: "city", type: "Ism (Noun)" },
-        { word: "أَلِيمٌ", translation: "painful", type: "Ism (Noun)" },
-        { word: "عَذَابٌ", translation: "punishment", type: "Ism (Noun)" },
-      ],
-      examples: [
-        {
-          arabic: "كِتَابٌ كَرِيمٌ",
-          lemma: ["كِتَابٌ", "كَرِيمٌ"],
-          translation: "A noble letter",
-          explanation: "The adjective 'كَرِيمٌ' (noble) comes after the noun 'كِتَابٌ' (letter).",
-          surah: "An-Naml",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-5.mp3",
-          ayah: 29
-        },
-        {
-          arabic: "بَلَدًا آمِنًا",
-          lemma: ["بَلَدًا", "آمِنًا"],
-          translation: "A secure city",
-          explanation: "The adjective 'ءَامِنًۭا' (secure) comes after the noun 'بَلَدًا' (city).",
-          surah: "Al-Baqarah",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-6.mp3",
-          ayah: 126
-        },
-        {
-          arabic: "عَذَابٌ أَلِيمٌ",
-          lemma: ["عَذَابٌ", "أَلِيمٌ"],
-          translation: "A painful punishment",
-          explanation: "The adjective 'أَلِيمٌ' (painful) comes after the noun 'عَذَابٌ' (punishment).",
-          surah: "Al-Baqarah",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-7.mp3",
-          ayah: 10
-        }
-      ]
-    },
-    {
-      rule: "In Arabic, the definite article 'ال' (al) is attached to the beginning of a word to make it definite.",
-      vocabulary: [
-        { word: "كِتَابٌ", translation: "book", type: "Ism (Noun)" },
-        { word: "رَحِيمٌ", translation: "Merciful", type: "Ism (Noun)" },
-        { word: "عَالَمٌ", translation: "world", type: "Ism (Noun)" },
-      ],
-      examples: [
-        {
-          arabic: "الْكِتَابُ",
-          lemma: "كِتَابٌ",
-          translation: "The book",
-          explanation: "The definite article 'ال' is attached to 'كِتَابُ' (book) to make it 'the book'.",
-          surah: "Al-Baqarah",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-8.mp3",
-          ayah: 2
-        },
-        {
-          arabic: "الرَّحِيمِ",
-          lemma: "رَحِيمٌ",
-          translation: "The Most Merciful",
-          explanation: "The definite article 'ال' is attached to 'رَحِيمٌ' (Merciful) to make it 'the Most Merciful'.",
-          surah: "Al-Fatihah",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-9.mp3",
-          ayah: 3
-        },
-        {
-          arabic: "الْعَالَمِينَ",
-          lemma: "عَالَمٌ",
-          translation: "The worlds",
-          explanation: "The definite article 'ال' is attached to 'عَالَمِينَ' (worlds) to make it 'the worlds'.",
-          surah: "Al-Fatihah",
-          audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-10.mp3",
-          ayah: 2
-        }
-      ]
-    },
-  ])
+  const [rules, setRules] = useState(initialRules);
 
   const [quizResults, setQuizResults] = useState<{ [key: string]: boolean[] }>({});
   const [isSignupOpen, setIsSignupOpen] = useState(false)
@@ -317,6 +101,13 @@ const ArabicGrammarApp = () => {
   const [coveredExamples, setCoveredExamples] = useState<Set<string>>(new Set());
   // Add state for showing word summary
   const [showingWordSummary, setShowingWordSummary] = useState(false);
+
+  // Add these two new state variables
+  const [isLearningActive, setIsLearningActive] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<Rule | null>(null);
+
+  // Add new state variable for LettersOverlay
+  const [isLettersActive, setIsLettersActive] = useState(false);
 
   // Function to get vocabulary for covered examples
   const getCoveredVocabulary = () => {
@@ -441,22 +232,9 @@ const ArabicGrammarApp = () => {
     }
   };
 
-  const navigateToRule = (rule: string) => {
-    const ruleIndex = rules.findIndex(r => r.rule === rule);
-    if (ruleIndex !== -1) {
-      setCurrentRuleIndex(ruleIndex);
-      const currentRuleExamples = rules[ruleIndex].examples;
-      
-      // Find the first unlearned example
-      const firstUnlearnedIndex = currentRuleExamples.findIndex(example => 
-        !learnedWords.some(word => word.arabic === example.arabic)
-      );
-      
-      // Set to first unlearned example or 0 if all are learned
-      setCurrentExampleIndex(firstUnlearnedIndex !== -1 ? firstUnlearnedIndex : 0);
-      setShowingExamples(firstUnlearnedIndex !== -1);
-      setActiveTab("learn");
-    }
+  const navigateToRule = (rule: Rule) => {
+    setSelectedRule(rule);
+    setIsLearningActive(true);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -611,170 +389,9 @@ const ArabicGrammarApp = () => {
     return null;
   };
 
-  // Modify LearnTab to accept audioRef as prop
-  const LearnTab = () => {
-    const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
-    const currentRule = rules[currentRuleIndex];
-    const currentExample = currentRule.examples[currentExampleIndex];
-    const unlearned = currentRule.examples.filter(example => 
-      !learnedWords.some(word => word.arabic === example.arabic)
-    );
+ 
 
-    useEffect(() => {
-      if (showingExamples && currentExample?.audio) {
-        // Clean up previous audio if it exists
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-
-        // Create new audio instance
-        audioRef.current = new Audio(currentExample.audio);
-        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
-
-        // Cleanup function
-        return () => {
-          if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
-          }
-        };
-      }
-    }, [showingExamples, currentExampleIndex]);
-
-    // Modify the audio button click handler
-    const handleAudioPlay = () => {
-      if (audioRef.current) {
-        // If audio exists, reset and play
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
-      } else if (currentExample?.audio) {
-        // If no audio instance exists, create new one
-        audioRef.current = new Audio(currentExample.audio);
-        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
-      }
-    };
-
-    return (
-      <>
-        {/* Grammar Rule (always visible) */}
-        <section className="mb-4 bg-white rounded-lg p-4 shadow">
-          <h2 className="text-lg font-semibold mb-2">Grammar Rule:</h2>
-          <p>{currentRule.rule}</p>
-        </section>
-
-        {showingWordSummary ? (
-          <WordSummary />
-        ) : !showingExamples ? (
-          unlearned.length > 0 ? (
-            // Start Examples button - directly starts examples without vocabulary preview
-            <button 
-              onClick={() => setShowingExamples(true)}
-              className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition duration-300 mb-4"
-            >
-              Start Examples
-            </button>
-          ) : (
-            // All examples learned for this rule
-            <div className="mb-4 text-center">
-              <p className="mb-2">Great job! You've learned all examples for this rule.</p>
-              <button 
-                onClick={showNextRule}
-                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
-              >
-                Next Rule
-              </button>
-            </div>
-          )
-        ) : (
-          // Quranic Example section
-          <section className="mb-4 bg-white rounded-lg p-4 shadow">
-            <h2 className="text-lg font-semibold mb-2">Quranic Example:</h2>
-            <p className="text-sm text-gray-500 mb-2">
-              Example {currentExampleIndex + 1} of {currentRule.examples.length}
-            </p>
-            <div className="flex justify-end items-center  gap-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleAudioPlay}
-                className="h-8 w-8 text-blue-500"
-                title="Play Audio"
-              >
-                <Volume2 className="h-4 w-4" />
-              </Button>
-              <p className="text-2xl font-arabic">{currentExample.arabic}</p>
-            </div>
-            <p className="text-lg text-gray-700 text-right">{currentExample.translation}</p>
-            <button 
-              onClick={() => setIsVerseModalOpen(true)}
-              className="text-xs mb-2 text-right text-blue-500 hover:text-blue-700 hover:underline block w-full"
-            >
-              Surah {currentExample.surah}, Ayah {currentExample.ayah}
-            </button>
-            <p className="mb-4"><strong>Explanation:</strong> {currentExample.explanation}</p>
-            <div className="flex flex-col gap-2">
-              {currentExampleIndex === currentRule.examples.length - 1 ? (
-                <motion.button 
-                  onClick={showNextExample}
-                  className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg hover:bg-emerald-700 transition duration-300 flex items-center justify-center shadow-lg"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0 }}
-                  animate={{ 
-                    opacity: 1,
-                    y: [-10, 1, 10],
-                    transition: {
-                      y: {
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear"
-                      }
-                    }
-                  }}
-                >
-                  See New words you learned!
-                  <ChevronRight className="ml-2" size={20} />
-                </motion.button>
-              ) : (
-                <button 
-                  onClick={showNextExample}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center"
-                >
-                  Next Example
-                  <ChevronRight className="ml-2" size={20} />
-                </button>
-              )}
-              <button 
-                onClick={showNextRule}
-                className="w-full text-sm text-gray-500 hover:text-gray-700 transition duration-300 flex items-center justify-center"
-              >
-                Skip to next rule
-                <ChevronRight className="ml-2" size={16} />
-              </button>
-            </div>
-          </section>
-        )}
-
-        {/* Add VerseModal */}
-        {showingExamples && (
-          <VerseModal
-            isOpen={isVerseModalOpen}
-            onClose={() => setIsVerseModalOpen(false)}
-            verse={{
-              arabic: VERSE_DETAILS[`${currentExample.surah}-${currentExample.ayah}`]?.arabic || '',
-              translation: VERSE_DETAILS[`${currentExample.surah}-${currentExample.ayah}`]?.translation || '',
-              surah: currentExample.surah,
-              ayah: currentExample.ayah,
-              highlightText: currentExample.arabic
-            }}
-          />
-        )}
-      </>
-    );
-  };
-
-  const WordsTab = () => {
+  const WordsTab = ({ quizResults }: WordsTabProps) => {
     const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
     const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null);
     const [selectedVerse, setSelectedVerse] = useState<{
@@ -1196,6 +813,36 @@ const ArabicGrammarApp = () => {
     );
   };
 
+  const ContentsTab = () => {
+    return (
+      <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border p-4">
+        <h2 className="text-2xl font-bold mb-4">Contents</h2>
+        <div className="space-y-2">
+          {/* Add Letters section */}
+          <button
+            onClick={() => setIsLettersActive(true)}
+            className="w-full p-4 text-left bg-white rounded-lg shadow hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-semibold text-lg mb-1">Arabic Letters</h3>
+            <p className="text-sm text-gray-600">Learn the Arabic alphabet and their pronunciations</p>
+          </button>
+
+          {/* Existing rules */}
+          {rules.map((rule, index) => (
+            <button
+              key={index}
+              onClick={() => navigateToRule(rule)}
+              className="w-full p-4 text-left bg-white rounded-lg shadow hover:bg-gray-50 transition-colors"
+            >
+              <h3 className="font-semibold text-lg mb-1">{rule.title}</h3>
+              <p className="text-sm text-gray-600">{rule.rule}</p>
+            </button>
+          ))}
+        </div>
+      </ScrollArea>
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto bg-gray-100 text-gray-800">
       {/* Header */}
@@ -1228,7 +875,84 @@ const ArabicGrammarApp = () => {
         </div>
       </header>
 
-      {/* Dialog */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-grow relative">
+        {/* Main Content */}
+        <main className="flex-grow p-4 overflow-y-auto mb-14">
+          <TabsContent value="contents">
+            <ContentsTab />
+          </TabsContent>
+         
+          <TabsContent value="words">
+            <WordsTab quizResults={quizResults} />
+          </TabsContent>
+          <TabsContent value="quran">
+            <QuranOverlay />
+          </TabsContent>
+        </main>
+
+        {/* Bottom Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 border-t bg-white max-w-md mx-auto h-14">
+          <TabsList className="w-full h-full grid grid-cols-2">
+            <TabsTrigger value="contents" className="flex flex-col items-center justify-center data-[state=active]:text-emerald-600">
+              <List className="h-5 w-5" />
+              <span className="text-xs">Contents</span>
+            </TabsTrigger>
+            <TabsTrigger value="words" className="flex flex-col items-center justify-center data-[state=active]:text-emerald-600">
+              <Book className="h-5 w-5" />
+              <span className="text-xs">Words</span>
+            </TabsTrigger>
+            {/* <TabsTrigger value="quran" className="flex flex-col items-center justify-center data-[state=active]:text-emerald-600">
+              <User className="h-5 w-5" />
+              <span className="text-xs">Quran</span>
+            </TabsTrigger> */}
+          </TabsList>
+        </nav>
+      </Tabs>
+
+      {/* Overlays and dialogs */}
+      {isQuizActive && questions.length > 0 && (
+        <QuizOverlay
+          questions={questions}
+          onComplete={(newResults) => {
+            setQuizResults(prev => ({
+              ...prev,
+              ...newResults
+            }));
+            setIsQuizActive(false);
+          }}
+          onClose={() => setIsQuizActive(false)}
+        />
+      )}
+
+      {isLearningActive && selectedRule && (
+        <LearnOverlay
+          rule={selectedRule}
+          verseDetails={VERSE_DETAILS}
+          onComplete={(newLearnedWords, newQuizResults) => {
+            setLearnedWords(prev => [...prev, ...newLearnedWords]);
+            // Merge new quiz results with existing ones
+            setQuizResults(prev => ({
+              ...prev,
+              ...newQuizResults
+            }));
+            setIsLearningActive(false);
+            setSelectedRule(null);
+          }}
+          onClose={() => {
+            setIsLearningActive(false);
+            setSelectedRule(null);
+          }}
+        />
+      )}
+
+      {isLettersActive && (
+        <LettersOverlay
+          onClose={() => {
+            setIsLettersActive(false);
+          }}
+        />
+      )}
+
       <Dialog open={isSignupOpen} onOpenChange={(open) => {
         setIsSignupOpen(open);
         if (!open) {
@@ -1273,60 +997,6 @@ const ArabicGrammarApp = () => {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Main Content */}
-      <main className="flex-grow p-4 overflow-y-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="learn">Learn</TabsTrigger>
-            <TabsTrigger value="words">Words</TabsTrigger>
-          </TabsList>
-          <TabsContent value="learn">
-            <LearnTab />
-          </TabsContent>
-          <TabsContent value="words">
-            <WordsTab />
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Navigation Bar */}
-<nav className="flex justify-around items-center p-4 bg-white border-t border-gray-200">
-  <button 
-    className={`flex flex-col items-center ${activeTab === 'learn' ? 'text-emerald-600' : 'text-gray-500'}`}
-    onClick={() => setActiveTab('learn')}
-  >
-    <BookOpen size={24} />
-    <span className="text-xs mt-1">Learn</span>
-  </button>
-  <button 
-    className={`flex flex-col items-center ${activeTab === 'words' ? 'text-emerald-600' : 'text-gray-500'}`}
-    onClick={() => setActiveTab('words')}
-  >
-    <List size={24} />
-    <span className="text-xs mt-1">Words</span>
-  </button>
-  
-  <button className="flex flex-col items-center text-gray-500">
-    <User size={24} />
-    <span className="text-xs mt-1">Profile</span>
-  </button>
-</nav>
-
-      {/* Add QuizOverlay */}
-      {isQuizActive && questions.length > 0 && (
-        <QuizOverlay
-          questions={questions}
-          onComplete={(newResults) => {
-            setQuizResults(prevResults => ({
-              ...prevResults,  // Keep previous results
-              ...newResults    // Merge with new results
-            }));
-            setIsQuizActive(false);
-          }}
-          onClose={() => setIsQuizActive(false)}
-        />
-      )}
     </div>
   )
 }
