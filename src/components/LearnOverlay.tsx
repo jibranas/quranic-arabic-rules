@@ -421,7 +421,11 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
                   return (
                     <motion.div
                       key={index}
-                      ref={el => exampleRefs.current[index] = el}
+                      ref={(el: HTMLDivElement | null) => {
+                        if (el) {
+                          exampleRefs.current[index] = el;
+                        }
+                      }}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-white rounded-lg shadow p-4"
