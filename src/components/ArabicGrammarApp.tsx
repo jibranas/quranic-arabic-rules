@@ -67,7 +67,6 @@ interface Rule {
   examples: Example[];
 }
 
-// Add interface for WordsTab props
 interface WordsTabProps {
   quizResults: { [key: string]: boolean[] };
 }
@@ -392,7 +391,6 @@ const ArabicGrammarApp = () => {
 
  
 
-  // Update WordsTab component definition to accept props
   const WordsTab = ({ quizResults }: WordsTabProps) => {
     const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
     const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null);
