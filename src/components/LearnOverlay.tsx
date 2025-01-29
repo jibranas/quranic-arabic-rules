@@ -41,9 +41,13 @@ interface LearnOverlayProps {
 type QuestionType = 'vocabulary' | 'grammar' | 'partsOfSpeech';
 
 // Helper function to analyze performance
-const analyzePerformance = (arabic: string) => {
+const analyzePerformance = (
+  arabic: string,
+  quizResults: { [key: string]: boolean[] },
+  questions: Question[]
+) => {
   const results = quizResults[arabic] || [];
-  const questions = questions.filter(q => q.word.arabic === arabic);
+  const wordQuestions = questions.filter(q => q.word.arabic === arabic);
   
   if (!results.length) return null;
 
@@ -58,7 +62,7 @@ const analyzePerformance = (arabic: string) => {
     partsOfSpeech: { total: 0, correct: 0 }
   };
 
-  questions.forEach((q, index) => {
+  wordQuestions.forEach((q, index) => {
     performanceByType[q.type].total++;
     if (results[index]) {
       performanceByType[q.type].correct++;
