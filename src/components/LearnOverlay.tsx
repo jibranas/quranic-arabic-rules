@@ -8,6 +8,7 @@ import { QuizOverlay } from "@/components/QuizOverlay";
 import { shuffleArray } from "@/lib/utils";
 import { rules } from '../../data/rules';
 import { QuizResults } from "@/components/QuizResults";
+import { Question } from "@/types/arabic";
 
 interface Example {
   arabic: string;
