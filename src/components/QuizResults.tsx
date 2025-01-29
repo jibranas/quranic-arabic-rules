@@ -92,7 +92,8 @@ export function QuizResults({ rule, questions, quizResults, onComplete }: QuizRe
 
   // Get unique words from questions to avoid duplicates
   const uniqueWords = Array.from(new Set(questions.map(q => q.word.arabic)))
-    .map(arabic => questions.find(q => q.word.arabic === arabic)?.word);
+    .map(arabic => questions.find(q => q.word.arabic === arabic)?.word)
+    .filter((word): word is NonNullable<typeof word> => word !== undefined);
 
   return (
     <div className="fixed inset-0 bg-white z-50">
