@@ -267,14 +267,20 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
 
   const handleStartQuiz = () => {
     const allQuestions = rule.examples.flatMap(example => {
+      // Convert Example to Word by adding the rule property
+      const wordFromExample: Word = {
+        ...example,
+        rule: rule.rule
+      };
+
       // Always generate vocabulary and grammar questions
       const questions = [
-        generateVocabularyQuestion(example),
-        generateGrammarQuestion(example)
+        generateVocabularyQuestion(wordFromExample),
+        generateGrammarQuestion(wordFromExample)
       ];
       
       // Try to generate parts of speech question
-      const partsOfSpeechQ = generatePartsOfSpeechQuestion(example);
+      const partsOfSpeechQ = generatePartsOfSpeechQuestion(wordFromExample);
       if (partsOfSpeechQ) {
         questions.push(partsOfSpeechQ);
       }
