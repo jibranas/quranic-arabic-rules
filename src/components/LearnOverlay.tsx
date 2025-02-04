@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { X, Volume2, ChevronRight, CheckIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,8 @@ import { shuffleArray } from "@/lib/utils";
 import { rules } from '../../data/rules';
 import { QuizResults } from "@/components/QuizResults";
 import { Question, Word } from "@/types/arabic";
+import { fetchVerse } from '../../data/verses';
+import Lottie from 'lottie-react';
 
 interface Example {
   arabic: string;
@@ -18,24 +20,36 @@ interface Example {
   surah: string;
   audio: string;
   ayah: number;
+  beforeInterlude?: InterludeSlide[];
+  afterInterlude?: InterludeSlide[];
 }
 
 interface Rule {
   title: string;
   rule: string;
+  introInterlude?: InterludeSlide[];
   vocabulary: {
     word: string;
     translation: string;
     type: string;
   }[];
   examples: Example[];
+  conclusionInterlude?: InterludeSlide[];
+}
+
+interface InterludeSlide {
+  type: string;
+  content: string;
+  caption?: string;
 }
 
 interface LearnOverlayProps {
   rule: Rule;
-  verseDetails: { [key: string]: { arabic: string; translation: string } };
   onComplete: (learnedWords: { arabic: string; translation: string; rule: string; surah: string; ayah: number; explanation: string }[], quizResults: { [key: string]: boolean[] }) => void;
   onClose: () => void;
+  generateVocabularyQuestion: (word: Word) => Question;
+  generateGrammarQuestion: (word: Word) => Question;
+  generatePartsOfSpeechQuestion: (word: Word) => Question | null;
 }
 
 // Add this type if not already defined
@@ -79,72 +93,139 @@ const analyzePerformance = (
   };
 };
 
-export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnOverlayProps) {
+export function LearnOverlay({ 
+  rule, 
+  onComplete, 
+  onClose,
+  generateVocabularyQuestion,
+  generateGrammarQuestion,
+  generatePartsOfSpeechQuestion 
+}: LearnOverlayProps) {
   const [visibleExamples, setVisibleExamples] = useState<number[]>([]);
   const [showingExamples, setShowingExamples] = useState(false);
   const [showingWordSummary, setShowingWordSummary] = useState(false);
   const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
   const [selectedExample, setSelectedExample] = useState<Example | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const exampleRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [quizResults, setQuizResults] = useState<{ [key: string]: boolean[] }>({});
   const [showingResults, setShowingResults] = useState(false);
-  
-  const progress = showingExamples 
-    ? (visibleExamples.length / rule.examples.length) * 100 
-    : 0;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [maxVisibleIndex, setMaxVisibleIndex] = useState(-1);
 
-  // Auto-play audio when a new example becomes visible
+  // Update the learning sequence generation to use the rule prop
+  const learningSequence = useMemo(() => {
+    const sequence = [];
+    
+    // Add intro interlude slides if they exist
+    if (rule.introInterlude) {
+      sequence.push(...rule.introInterlude.map(slide => ({
+        type: 'interlude' as const,
+        content: slide
+      })));
+    }
+    
+    // Add examples with their associated interludes
+    rule.examples.forEach(example => {
+      // Add before interlude if it exists
+      if (example.beforeInterlude) {
+        sequence.push(...example.beforeInterlude.map(slide => ({
+          type: 'interlude' as const,
+          content: slide
+        })));
+      }
+      
+      // Add the example
+      sequence.push({
+        type: 'example' as const,
+        content: example
+      });
+      
+      // Add after interlude if it exists
+      if (example.afterInterlude) {
+        sequence.push(...example.afterInterlude.map(slide => ({
+          type: 'interlude' as const,
+          content: slide
+        })));
+      }
+    });
+    
+    // Add conclusion interlude slides if they exist
+    if (rule.conclusionInterlude) {
+      sequence.push(...rule.conclusionInterlude.map(slide => ({
+        type: 'interlude' as const,
+        content: slide
+      })));
+    }
+    
+    return sequence;
+  }, [rule]); // Only depend on the rule prop
+
+  const progress = ((currentIndex + 1) / learningSequence.length) * 100;
+
+  // Add scroll function
+  const scrollToItem = useCallback((index: number) => {
+    const element = itemRefs.current[index];
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center'
+      });
+    }
+  }, []);
+
+  // Update showNextItem to include scrolling
+  const showNextItem = useCallback(() => {
+    if (currentIndex < learningSequence.length - 1) {
+      const nextIndex = currentIndex + 1;
+      setMaxVisibleIndex(nextIndex);
+      setCurrentIndex(nextIndex);
+      // Add a small delay to ensure the item is rendered before scrolling
+      setTimeout(() => scrollToItem(nextIndex), 100);
+    } else {
+      setShowingWordSummary(true);
+    }
+  }, [currentIndex, learningSequence.length, scrollToItem]);
+
+  // Add effect to handle audio playback when currentIndex changes
   useEffect(() => {
-    if (showingExamples && visibleExamples.length > 0) {
-      const latestExampleIndex = visibleExamples[visibleExamples.length - 1];
-      const currentExample = rule.examples[latestExampleIndex];
-
-      if (currentExample?.audio) {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-
-        audioRef.current = new Audio(currentExample.audio);
-        audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
-
-        return () => {
+    if (currentIndex >= 0 && learningSequence[currentIndex]?.type === 'example') {
+      const example = learningSequence[currentIndex].content as Example;
+      
+      if (example?.audio) {
+        const cleanupAudio = () => {
           if (audioRef.current) {
             audioRef.current.pause();
+            audioRef.current.src = '';
             audioRef.current = null;
           }
         };
+
+        cleanupAudio(); // Cleanup any existing audio
+
+        const audio = new Audio(example.audio);
+        audioRef.current = audio;
+        
+        audio.addEventListener('canplaythrough', () => {
+          audio.play().catch(error => console.log('Audio playback failed:', error));
+        });
+
+        return cleanupAudio;
       }
     }
-  }, [visibleExamples.length, showingExamples]);
+  }, [currentIndex, learningSequence]);
 
+  // Add handleAudioPlay function for manual replay
   const handleAudioPlay = (example: Example) => {
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
     } else if (example.audio) {
-      audioRef.current = new Audio(example.audio);
-      audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
-    }
-  };
-
-  const showNextExample = () => {
-    if (visibleExamples.length < rule.examples.length) {
-      const nextIndex = visibleExamples.length;
-      setVisibleExamples(prev => [...prev, nextIndex]);
-      
-      // Scroll to the new example after it's rendered
-      setTimeout(() => {
-        exampleRefs.current[nextIndex]?.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }, 100);
-    } else {
-      setShowingWordSummary(true);
+      const audio = new Audio(example.audio);
+      audioRef.current = audio;
+      audio.play().catch(error => console.log('Audio playback failed:', error));
     }
   };
 
@@ -160,137 +241,65 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
     onComplete(learnedWords, quizResults);
   };
 
-  // Add these helper functions from ArabicGrammarApp
-  const generateVocabularyQuestion = (word: Word): Question => {
-    const otherTranslations = rule.examples
-      .filter(w => w.translation !== word.translation)
-      .map(w => w.translation);
-    
-    const otherOptions = shuffleArray(otherTranslations).slice(0, 3);
-    const options = shuffleArray([word.translation, ...otherOptions]);
-
-    return {
-      type: 'vocabulary' as const,
-      word,
-      question: `What is the translation of: "${word.arabic}"?`,
-      options,
-      correctAnswer: word.translation
-    };
-  };
-
-  const generateGrammarQuestion = (word: Word): Question => {
-    const correctRule = 'In Arabic, verbs may come before the subject in a sentence.';
-
-    const otherRules = rules
-      .map(r => r.rule)
-      .filter(rule => rule !== correctRule && rule && rule.trim() !== '');
-
-    const options = shuffleArray([correctRule, ...otherRules])
-      .filter(option => option && option.trim() !== '');
-
-    return {
-      type: 'grammar' as const,
-      word,
-      question: `What grammar rule is demonstrated in: "${word.arabic}"?`,
-      options,
-      correctAnswer: correctRule
-    };
-  };
-
-  const generatePartsOfSpeechQuestion = (word: Word): Question | null => {
-    if (word.explanation.includes("verb") && word.explanation.includes("subject")) {
-      const verbMatch = word.explanation.match(/The verb '([^']+)'/);
-      const subjectMatch = word.explanation.match(/subject '([^']+)'/);
-
-      if (!verbMatch || !subjectMatch) return null;
-
-      const verb = verbMatch[1];
-      const subject = subjectMatch[1];
-
-      const isIdentifyPartQuestion = Math.random() > 0.5;
-
-      if (isIdentifyPartQuestion) {
-        const targetWord = Math.random() > 0.5 ? verb : subject;
-        return {
-          type: 'partsOfSpeech' as const,
-          word,
-          question: `What part of speech is "${targetWord}" in "${word.arabic}"?`,
-          options: ['Verb', 'Subject (Noun)'],
-          correctAnswer: targetWord === verb ? 'Verb' : 'Subject (Noun)'
-        };
-      } else {
-        const targetPart = Math.random() > 0.5 ? 'verb' : 'subject';
-        return {
-          type: 'partsOfSpeech' as const,
-          word,
-          question: `Which word is the ${targetPart} in "${word.arabic}"?`,
-          options: [verb, subject],
-          correctAnswer: targetPart === 'verb' ? verb : subject
-        };
-      }
-    }
-    
-    if (word.explanation.includes("adjective") && word.explanation.includes("noun")) {
-      const nounMatch = word.explanation.match(/noun '([^']+)'/);
-      const adjectiveMatch = word.explanation.match(/adjective '([^']+)'/);
-
-      if (!nounMatch || !adjectiveMatch) return null;
-
-      const noun = nounMatch[1];
-      const adjective = adjectiveMatch[1];
-
-      const isIdentifyPartQuestion = Math.random() > 0.5;
-
-      if (isIdentifyPartQuestion) {
-        const targetWord = Math.random() > 0.5 ? noun : adjective;
-        return {
-          type: 'partsOfSpeech' as const,
-          word,
-          question: `What part of speech is "${targetWord}" in "${word.arabic}"?`,
-          options: ['Noun', 'Adjective'],
-          correctAnswer: targetWord === noun ? 'Noun' : 'Adjective'
-        };
-      } else {
-        const targetPart = Math.random() > 0.5 ? 'noun' : 'adjective';
-        return {
-          type: 'partsOfSpeech' as const,
-          word,
-          question: `Which word is the ${targetPart} in "${word.arabic}"?`,
-          options: [noun, adjective],
-          correctAnswer: targetPart === 'noun' ? noun : adjective
-        };
-      }
-    }
-
-    return null;
-  };
-
   const handleStartQuiz = () => {
-    const allQuestions = rule.examples.flatMap(example => {
-      // Convert Example to Word by adding the rule property
+    // Create a pool of questions for each type
+    const vocabularyQuestions = rule.examples.map(example => {
       const wordFromExample: Word = {
         ...example,
         rule: rule.rule
       };
-
-      // Always generate vocabulary and grammar questions
-      const questions = [
-        generateVocabularyQuestion(wordFromExample),
-        generateGrammarQuestion(wordFromExample)
-      ];
-      
-      // Try to generate parts of speech question
-      const partsOfSpeechQ = generatePartsOfSpeechQuestion(wordFromExample);
-      if (partsOfSpeechQ) {
-        questions.push(partsOfSpeechQ);
-      }
-      
-      console.log('Generated questions for example:', example.arabic, questions);
-      return questions;
+      return generateVocabularyQuestion(wordFromExample);
     });
 
-    console.log('All questions:', allQuestions);
-    setQuestions(shuffleArray(allQuestions));
+    const grammarQuestions = rule.examples.map(example => {
+      const wordFromExample: Word = {
+        ...example,
+        rule: rule.rule
+      };
+      return generateGrammarQuestion(wordFromExample);
+    });
+
+    const partsOfSpeechQuestions = rule.examples
+      .map(example => {
+        const wordFromExample: Word = {
+          ...example,
+          rule: rule.rule
+        };
+        return generatePartsOfSpeechQuestion(wordFromExample);
+      })
+      .filter((q): q is Question => q !== null);
+
+    // Ensure we have at least one of each type where possible
+    const selectedQuestions: Question[] = [];
+
+    // Add one vocabulary question
+    if (vocabularyQuestions.length > 0) {
+      selectedQuestions.push(shuffleArray(vocabularyQuestions)[0]);
+    }
+
+    // Add one grammar question
+    if (grammarQuestions.length > 0) {
+      selectedQuestions.push(shuffleArray(grammarQuestions)[0]);
+    }
+
+    // Add one parts of speech question if available
+    if (partsOfSpeechQuestions.length > 0) {
+      selectedQuestions.push(shuffleArray(partsOfSpeechQuestions)[0]);
+    }
+
+    // Fill remaining slots with random questions
+    const remainingSlots = 5 - selectedQuestions.length;
+    const remainingQuestions = shuffleArray([
+      ...vocabularyQuestions,
+      ...grammarQuestions,
+      ...partsOfSpeechQuestions
+    ]).filter(q => !selectedQuestions.some(sq => 
+      sq.word.arabic === q.word.arabic && sq.type === q.type
+    ));
+
+    selectedQuestions.push(...remainingQuestions.slice(0, remainingSlots));
+
+    setQuestions(shuffleArray(selectedQuestions));
     setIsQuizActive(true);
     setShowingWordSummary(false);
   };
@@ -324,15 +333,16 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
 
   if (showingWordSummary) {
     return (
-      <div className="fixed inset-0 bg-white z-50">
+      <div className="fixed inset-0 bg-white z-50 flex flex-col">
         <div className="p-4 flex justify-between items-center border-b">
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-6 w-6" />
           </Button>
           <h2 className="text-xl font-bold">New Words Learned</h2>
-          <div className="w-10" /> {/* Spacer for alignment */}
+          <div className="w-10" />
         </div>
-        <div className="p-4">
+        
+        <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             {rule.vocabulary.map((word, index) => (
               <motion.div
@@ -358,9 +368,12 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
               </motion.div>
             ))}
           </div>
+        </ScrollArea>
+
+        <div className="p-4 border-t">
           <Button 
             onClick={handleStartQuiz}
-            className="w-full mt-8"
+            className="w-full"
           >
             Start Practice Quiz
           </Button>
@@ -369,10 +382,47 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
     );
   }
 
+  // Update the renderExample function to handle verse modal
+  const renderExample = (example: Example) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-lg shadow p-4"
+    >
+      <div className="text-right mb-4">
+        <div className="flex justify-end items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => handleAudioPlay(example)}
+            className="h-8 w-8 text-blue-500"
+            title="Play Audio"
+          >
+            <Volume2 className="h-4 w-4" />
+          </Button>
+          <div className="text-2xl font-arabic">{example.arabic}</div>
+        </div>
+        <div className="text-lg text-gray-700">{example.translation}</div>
+        <button 
+          onClick={() => {
+            setSelectedExample(example);
+            setIsVerseModalOpen(true);
+          }}
+          className="text-xs mb-2 text-right text-blue-500 hover:text-blue-700 hover:underline block w-full"
+        >
+          Surah {example.surah}, Ayah {example.ayah}
+        </button>
+      </div>
+      <p className="text-sm text-gray-600 mb-4">
+        <strong>Explanation:</strong> {example.explanation}
+      </p>
+    </motion.div>
+  );
+
   return (
     <div className="fixed inset-0 bg-white z-50">
-      {/* Header with progress and close button */}
-      <div className="fixed top-0 left-0 right-0 z-10">
+      {/* Header */}
+      <div className="fixed top-0 left-0 right-0 z-10 bg-white">
         <div className="flex justify-between items-center p-4">
           <Button 
             variant="ghost" 
@@ -382,7 +432,7 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
             <X className="h-6 w-6" />
           </Button>
           <div className="w-full max-w-md mx-4">
-            <div className="h-2 rounded-full">
+            <div className="h-2 rounded-full bg-gray-200">
               <motion.div
                 className="h-full bg-green-500 rounded-full"
                 initial={{ width: 0 }}
@@ -403,101 +453,57 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
             <p className="text-gray-600">{rule.rule}</p>
           </div>
 
-          {!showingExamples ? (
-            <Button 
-              onClick={() => {
-                setShowingExamples(true);
-                showNextExample();
+          {learningSequence.map((item, index) => (
+            <motion.div
+              key={index}
+              ref={el => itemRefs.current[index] = el}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ 
+                opacity: index <= maxVisibleIndex ? 1 : 0,
+                y: index <= maxVisibleIndex ? 0 : 20 
               }}
-              className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition duration-300 mb-4"
+              transition={{ duration: 0.5 }}
+              className={`mb-8 ${index > maxVisibleIndex ? 'hidden' : ''}`}
             >
-              Start Examples
-            </Button>
-          ) : (
-            <div className="space-y-6">
-              <AnimatePresence>
-                {visibleExamples.map((index) => {
-                  const example = rule.examples[index];
-                  return (
-                    <motion.div
-                      key={index}
-                      ref={(el: HTMLDivElement | null) => {
-                        if (el) {
-                          exampleRefs.current[index] = el;
-                        }
-                      }}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white rounded-lg shadow p-4"
-                    >
-                      <div className="text-right mb-4">
-                        <div className="flex justify-end items-center gap-2">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleAudioPlay(example)}
-                            className="h-8 w-8 text-blue-500"
-                            title="Play Audio"
-                          >
-                            <Volume2 className="h-4 w-4" />
-                          </Button>
-                          <div className="text-2xl font-arabic">{example.arabic}</div>
-                        </div>
-                        <div className="text-lg text-gray-700">{example.translation}</div>
-                        <button 
-                          onClick={() => {
-                            setSelectedExample(example);
-                            setIsVerseModalOpen(true);
-                          }}
-                          className="text-xs mb-2 text-right text-blue-500 hover:text-blue-700 hover:underline block w-full"
-                        >
-                          Surah {example.surah}, Ayah {example.ayah}
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">
-                        <strong>Explanation:</strong> {example.explanation}
-                      </p>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-          )}
+              {item.type === 'interlude' 
+                ? renderInterludeSlide(item.content)
+                : renderExample(item.content)}
+            </motion.div>
+          ))}
         </div>
       </div>
 
       {/* Fixed button at bottom */}
-      {showingExamples && visibleExamples.length < rule.examples.length && (
+      {currentIndex < learningSequence.length - 1 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
           <Button 
-            onClick={showNextExample}
+            onClick={showNextItem}
             className="w-full"
           >
-            Next Example
+            Continue
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       )}
 
-      {showingExamples && visibleExamples.length === rule.examples.length && (
+      {currentIndex === learningSequence.length - 1 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
           <Button 
             onClick={() => setShowingWordSummary(true)}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+            className="w-full"
           >
-            See New Words
+            Complete Lesson
+            <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       )}
 
-      {/* Verse Modal */}
+      {/* Add VerseModal at the end of the component */}
       {isVerseModalOpen && selectedExample && (
         <VerseModal
           isOpen={isVerseModalOpen}
           onClose={() => setIsVerseModalOpen(false)}
           verse={{
-            arabic: verseDetails[`${selectedExample.surah}-${selectedExample.ayah}`]?.arabic || selectedExample.arabic,
-            translation: verseDetails[`${selectedExample.surah}-${selectedExample.ayah}`]?.translation || selectedExample.translation,
             surah: selectedExample.surah,
             ayah: selectedExample.ayah,
             highlightText: selectedExample.arabic
@@ -507,3 +513,54 @@ export function LearnOverlay({ rule, verseDetails, onComplete, onClose }: LearnO
     </div>
   );
 }
+// Render an interlude slide
+const renderInterludeSlide = (slide: InterludeSlide) => {
+  switch (slide.type) {
+    case 'text':
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="prose max-w-none w-full bg-white rounded-lg shadow p-6 mb-4"
+        >
+          <div dangerouslySetInnerHTML={{ __html: slide.content }} />
+        </motion.div>
+      );
+    
+    case 'image':
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-lg shadow p-6 mb-4"
+        >
+          <img 
+            src={slide.content} 
+            alt={slide.caption || ''} 
+            className="max-w-full max-h-[60vh] object-contain mx-auto"
+          />
+          {slide.caption && (
+            <p className="text-center text-sm text-gray-600 mt-2">
+              {slide.caption}
+            </p>
+          )}
+        </motion.div>
+      );
+
+    case 'animation':
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-white rounded-lg shadow p-6 mb-4"
+        >
+          <Lottie
+            animationData={JSON.parse(slide.content)}
+            loop={true}
+            autoplay={true}
+            style={{ width: '100%', height: '300px' }}
+          />
+        </motion.div>
+      );
+  }
+};

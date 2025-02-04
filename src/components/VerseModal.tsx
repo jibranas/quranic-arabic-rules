@@ -1,166 +1,31 @@
-import * as React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Volume2 } from 'lucide-react';
-import { Button } from './ui/button';
 
 interface VerseModalProps {
   isOpen: boolean;
   onClose: () => void;
   verse: {
-    arabic: string;
-    translation: string;
     surah: string;
     ayah: number;
     highlightText: string;
   };
 }
 
-export function VerseModal({ isOpen, onClose, verse }: VerseModalProps) {
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
+const getSurahNumber = (surahName: string): number => {
+  // If it's already a number
+  if (!isNaN(Number(surahName))) {
+    return Number(surahName);
+  }
 
-  const cleanupAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current = null;
-    }
-  };
+  // If the surah name contains numbers (e.g., "Al-Baqarah-2")
+  const numberMatch = surahName.match(/\d+/);
+  if (numberMatch) {
+    return Number(numberMatch[0]);
+  }
 
-  const handleClose = () => {
-    cleanupAudio();
-    onClose();
-  };
-
-  const playAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
-    }
-  };
-
-  React.useEffect(() => {
-    if (isOpen) {
-      setIsLoading(true);
-      const surahNumber = getSurahNumber(verse.surah);
-      
-      // Format the audio URL according to the specified pattern
-      const audioUrl = `https://quranaudio.pages.dev/2/${surahNumber}_${verse.ayah}.mp3`;
-      const audio = new Audio(audioUrl);
-      
-      audio.addEventListener('canplaythrough', () => {
-        setIsLoading(false);
-        audio.play();
-      });
-
-      audio.addEventListener('error', (e) => {
-        setIsLoading(false);
-        console.error('Error loading audio:', e);
-      });
-
-      audioRef.current = audio;
-
-      return cleanupAudio;
-    }
-  }, [isOpen, verse.surah, verse.ayah]);
-
-  // Function to highlight the specific word in the verse
-  const highlightWord = (text: string, wordToHighlight: string) => {
-    // For debugging
-    console.log('Full text:', text);
-    console.log('Word to highlight:', wordToHighlight);
-
-    // Normalize both strings by removing diacritics and special characters
-    const normalizeArabic = (str: string) => {
-      return str
-        .replace(/[\u064B-\u065F]/g, '') // Remove tashkeel (diacritics)
-        .replace(/\u0640/g, '')          // Remove tatweel
-        .replace(/[\u0670-\u0674]/g, '') // Remove superscript alef
-        .replace(/[ىئءؤإأٱآا]/g, 'ا')     // Normalize all alef forms first
-        .replace(/ة/g, 'ه')              // Normalize taa marbouta
-        .replace(/[ۚۖۛۗ]/g, '')          // Remove other marks
-        .replace(/\s+/g, ' ')            // Normalize spaces
-        .replace(/لله/g, 'الله')         // Fix Allah word normalization
-        .replace(/ا+/g, 'ا')             // Replace multiple alefs with single alef
-        .trim();
-    };
-
-    const normalizedText = normalizeArabic(text);
-    const normalizedWord = normalizeArabic(wordToHighlight);
-
-    console.log('Normalized text:', normalizedText);
-    console.log('Normalized word:', normalizedWord);
-
-    // Find the word boundaries in the original text
-    const words = text.split(/\s+/);
-    const normalizedWords = words.map(w => normalizeArabic(w));
-    const targetWords = wordToHighlight.split(/\s+/).map(w => normalizeArabic(w));
-    
-    let matchStart = -1;
-    for (let i = 0; i < normalizedWords.length - targetWords.length + 1; i++) {
-      if (targetWords.every((w, j) => normalizedWords[i + j] === w)) {
-        matchStart = i;
-        break;
-      }
-    }
-
-    if (matchStart === -1) return <>{text}</>;
-
-    // Get the original words with all diacritics
-    const originalPhrase = words.slice(matchStart, matchStart + targetWords.length).join(' ');
-    
-    // Split and highlight
-    const parts = text.split(originalPhrase);
-    
-    return (
-      <>
-        {parts.map((part, i) => (
-          <React.Fragment key={i}>
-            {part}
-            {i < parts.length - 1 && (
-              <span className="bg-yellow-200 px-1 rounded">
-                {originalPhrase}
-              </span>
-            )}
-          </React.Fragment>
-        ))}
-      </>
-    );
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex justify-between items-center">
-            <span>Surah {verse.surah}, Ayah {verse.ayah}</span>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={playAudio}
-              disabled={isLoading}
-              className="h-8 w-8"
-              title="Play Audio"
-            >
-              <Volume2 className={`h-4 w-4 ${isLoading ? 'animate-pulse' : ''}`} />
-            </Button>
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-2xl text-right font-arabic leading-loose">
-            {highlightWord(verse.arabic, verse.highlightText)}
-          </p>
-          <p className="text-gray-600">
-            {verse.translation}
-          </p>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Updated surah mapping
-function getSurahNumber(surahName: string): number {
+  // Full mapping of all 114 surahs
   const surahMap: { [key: string]: number } = {
     'Al-Fatihah': 1,
     'Al-Baqarah': 2,
@@ -278,5 +143,247 @@ function getSurahNumber(surahName: string): number {
     'An-Nas': 114
   };
 
-  return surahMap[surahName] || 1;
+  // Try to find the surah number by name
+  for (const [name, number] of Object.entries(surahMap)) {
+    // Case insensitive comparison and handle different formats of the same name
+    if (surahName.toLowerCase().replace(/[^a-z]/g, '') === name.toLowerCase().replace(/[^a-z]/g, '')) {
+      return number;
+    }
+  }
+
+  console.warn(`Could not find surah number for: ${surahName}`);
+  return 1; // Default to Al-Fatihah if not found
+};
+
+export function VerseModal({ isOpen, onClose, verse }: VerseModalProps) {
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [verseDetails, setVerseDetails] = React.useState<{ arabic: string; translation: string } | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const cleanupAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0; // Reset playback position
+      audioRef.current.src = ''; // Clear the source
+      audioRef.current = null;
+    }
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      cleanupAudio();
+      onClose();
+    }
+  };
+
+  const playAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(error => console.log('Audio playback failed:', error));
+    }
+  };
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsLoading(true);
+      setError(null);
+
+      const loadVerseAndAudio = async () => {
+        try {
+          const surahNumber = getSurahNumber(verse.surah);
+          
+          // Fetch verse text from API
+          const response = await fetch(`https://quranenc.com/api/v1/translation/aya/english_hilali_khan/${surahNumber}/${verse.ayah}`);
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch verse');
+          }
+
+          // Extract verse details from API response
+          const details = {
+            arabic: data.result.arabic_text,
+            translation: data.result.translation.replace(/^\s*\d+\.\s*/, '') // Remove verse number from translation
+          };
+          
+          // Set verse details and stop loading immediately after fetch
+          setVerseDetails(details);
+          setIsLoading(false);
+
+          // Handle audio separately
+          const audioUrl = `https://quranaudio.pages.dev/2/${surahNumber}_${verse.ayah}.mp3`;
+
+          // Clean up any existing audio first
+          cleanupAudio();
+          
+          const audio = new Audio(audioUrl);
+          audioRef.current = audio;
+          
+          audio.addEventListener('canplaythrough', () => {
+            if (audioRef.current === audio) {
+              audio.play().catch(error => console.log('Audio playback failed:', error));
+            }
+          });
+
+          audio.addEventListener('error', (e) => {
+            console.warn(`Audio failed to load:`, e);
+            if (audioRef.current === audio) {
+              audioRef.current = null;
+            }
+          });
+
+        } catch (error) {
+          console.error('Error loading verse:', error);
+          setError('Failed to load verse. Please try again later.');
+          setIsLoading(false);
+        }
+      };
+
+      loadVerseAndAudio();
+      return cleanupAudio;
+    }
+  }, [isOpen, verse.surah, verse.ayah]);
+
+  const highlightWord = (text: string, wordToHighlight: string) => {
+    // For debugging
+    console.log('Full text:', text);
+    console.log('Word to highlight:', wordToHighlight);
+
+    // Enhanced normalization function
+    const normalizeArabic = (str: string) => {
+      return str
+        // Remove diacritics and special marks
+        .replace(/[\u064B-\u065F]/g, '')         // Remove tashkeel (diacritics)
+        .replace(/[\u0670-\u0674]/g, '')         // Remove superscript alef
+        .replace(/[\u06D6-\u06ED]/g, '')         // Remove other arabic marks
+        .replace(/[\u0640]/g, '')                // Remove tatweel
+        .replace(/[ۚۖۛۗۙۥ]/g, '')                 // Remove other marks
+        
+        // Normalize alef variations
+        .replace(/[أإآاٱى]/g, 'ا')               // Normalize alef variations
+        .replace(/ٰ/g, 'ا')                      // Replace small alef with regular alef
+        
+        // Normalize other letters
+        .replace(/[ة]/g, 'ه')                    // Normalize taa marbouta
+        .replace(/[ي]/g, 'ى')                    // Normalize yaa
+        .replace(/[ؤئ]/g, 'ء')                   // Normalize hamza
+        
+        // Handle special cases
+        .replace(/لله/g, 'الله')                 // Fix Allah word normalization
+        .replace(/ٱ/g, 'ا')                      // Replace hamza wasl with alef
+        .replace(/ٓ/g, '')                       // Remove madda
+        
+        // Clean up spaces and duplicates
+        .replace(/\s+/g, ' ')                    // Normalize spaces
+        .replace(/ا+/g, 'ا')                     // Replace multiple alefs
+        .trim();
+    };
+
+    // Normalize both text and word to highlight
+    const normalizedText = normalizeArabic(text);
+    const normalizedWord = normalizeArabic(wordToHighlight);
+
+    console.log('Normalized text:', normalizedText);
+    console.log('Normalized word:', normalizedWord);
+
+    // Split into words and normalize each
+    const words = text.split(/\s+/);
+    const normalizedWords = words.map(w => normalizeArabic(w));
+    const targetWords = wordToHighlight.split(/\s+/).map(w => normalizeArabic(w));
+
+    console.log('Normalized words array:', normalizedWords);
+    console.log('Target words array:', targetWords);
+    
+    // Find the matching sequence
+    let matchStart = -1;
+    for (let i = 0; i < normalizedWords.length - targetWords.length + 1; i++) {
+      const potentialMatch = normalizedWords.slice(i, i + targetWords.length);
+      console.log(`Checking words at position ${i}:`, potentialMatch);
+      if (targetWords.every((w, j) => normalizedWords[i + j].includes(w) || w.includes(normalizedWords[i + j]))) {
+        matchStart = i;
+        console.log('Found match at position:', i);
+        break;
+      }
+    }
+
+    if (matchStart === -1) {
+      console.log('No match found');
+      return <>{text}</>;
+    }
+
+    // Get the original words with all diacritics
+    const originalPhrase = words.slice(matchStart, matchStart + targetWords.length).join(' ');
+    console.log('Original phrase to highlight:', originalPhrase);
+    
+    // Split and highlight
+    const parts = text.split(originalPhrase);
+    
+    return (
+      <>
+        {parts.map((part, i) => (
+          <React.Fragment key={i}>
+            {part}
+            {i < parts.length - 1 && (
+              <span className="bg-yellow-200 px-1 rounded">
+                {originalPhrase}
+              </span>
+            )}
+          </React.Fragment>
+        ))}
+      </>
+    );
+  };
+
+  // Add console.log for debugging in the render section
+  console.log('Current verseDetails:', verseDetails);
+  console.log('Loading state:', isLoading);
+  console.log('Error state:', error);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex justify-between items-center">
+            <span>Surah {verse.surah}, Ayah {verse.ayah}</span>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={playAudio}
+              disabled={!audioRef.current}
+              className="h-8 w-8"
+              title="Play Audio"
+            >
+              <Volume2 className={`h-4 w-4 ${isLoading ? 'animate-pulse' : ''}`} />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+            </div>
+          ) : (
+            <>
+              {verseDetails && (
+                <>
+                  <p className="text-2xl text-right font-arabic leading-loose">
+                    {verseDetails.arabic && highlightWord(verseDetails.arabic, verse.highlightText)}
+                  </p>
+                  <p className="text-gray-600">
+                    {verseDetails.translation}
+                  </p>
+                </>
+              )}
+              {error && (
+                <div className="text-sm text-red-500 text-center">
+                  {error}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 } 

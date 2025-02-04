@@ -1,0 +1,598 @@
+﻿{
+
+  "PartOfSpeechTags": [
+    {
+      "Tag": "N",
+      "ArabicName": "اسم",
+      "Description": "Noun",
+      "Category": "Nouns"
+    },
+    {
+      "Tag": "PN",
+      "ArabicName": "اسم علم",
+      "Description": "Proper noun",
+      "Category": "Nouns"
+    },
+    {
+      "Tag": "ADJ",
+      "ArabicName": "صفة",
+      "Description": "Adjective",
+      "Category": "Derived Nominals"
+    },
+    {
+      "Tag": "IMPN",
+      "ArabicName": "اسم فعل أمر",
+      "Description": "Imperative verbal noun",
+      "Category": "Derived Nominals"
+    },
+    {
+      "Tag": "NV",
+      "ArabicName": "اسم فعل",
+      "Description": "Imperative verbal noun",
+      "Category": "Derived Nominals"
+    },
+    {
+      "Tag": "PRON",
+      "ArabicName": "ضمير",
+      "Description": "Personal pronoun",
+      "Category": "Pronouns"
+    },
+    {
+      "Tag": "DEM",
+      "ArabicName": "اسم اشارة",
+      "Description": "Demonstrative pronoun",
+      "Category": "Pronouns"
+    },
+    {
+      "Tag": "REL",
+      "ArabicName": "اسم موصول",
+      "Description": "Relative pronoun",
+      "Category": "Pronouns"
+    },
+    {
+      "Tag": "T",
+      "ArabicName": "ظرف زمان",
+      "Description": "Time adverb",
+      "Category": "Adverbs"
+    },
+    {
+      "Tag": "LOC",
+      "ArabicName": "ظرف مكان",
+      "Description": "Location adverb",
+      "Category": "Adverbs"
+    },
+    {
+      "Tag": "V",
+      "ArabicName": "فعل",
+      "Description": "Verb",
+      "Category": "Verbs"
+    },
+    {
+      "Tag": "P",
+      "ArabicName": "حرف جر",
+      "Description": "Preposition",
+      "Category": "Prepositions"
+    },
+    {
+      "Tag": "EMPH",
+      "ArabicName": "لام التوكيد",
+      "Description": "Emphatic lām",
+      "Category": "lām Prefixes"
+    },
+    {
+      "Tag": "IMPV",
+      "ArabicName": "لام الامر",
+      "Description": "Imperative lām",
+      "Category": "lām Prefixes"
+    },
+    {
+      "Tag": "PRP",
+      "ArabicName": "لام التعليل",
+      "Description": "Purpose lām",
+      "Category": "lām Prefixes"
+    },
+    {
+      "Tag": "CONJ",
+      "ArabicName": "حرف عطف",
+      "Description": "Coordinating conjunction",
+      "Category": "Conjunctions"
+    },
+    {
+      "Tag": "SUB",
+      "ArabicName": "حرف مصدري",
+      "Description": "Subordinating conjunction",
+      "Category": "Conjunctions"
+    },
+    {
+      "Tag": "ACC",
+      "ArabicName": "حرف نصب",
+      "Description": "Accusative particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "AMD",
+      "ArabicName": "حرف استدراك",
+      "Description": "Amendment particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "ANS",
+      "ArabicName": "حرف جواب",
+      "Description": "Answer particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "AVR",
+      "ArabicName": "حرف ردع",
+      "Description": "Aversion particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "CAUS",
+      "ArabicName": "حرف سببية",
+      "Description": "Particle of cause",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "CERT",
+      "ArabicName": "حرف تحقيق",
+      "Description": "Particle of certainty",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "CIRC",
+      "ArabicName": "حرف حال",
+      "Description": "Circumstantial particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "COM",
+      "ArabicName": "واو المعية",
+      "Description": "Comitative particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "COND",
+      "ArabicName": "حرف شرط",
+      "Description": "Conditional particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "EQ",
+      "ArabicName": "حرف تسوية",
+      "Description": "Equalization particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "EXH",
+      "ArabicName": "حرف تحضيض",
+      "Description": "Exhortation particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "EXL",
+      "ArabicName": "حرف تفصيل",
+      "Description": "Explanation particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "EXP",
+      "ArabicName": "أداة استثناء",
+      "Description": "Exceptive particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "FUT",
+      "ArabicName": "حرف استقبال",
+      "Description": "Future particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "INC",
+      "ArabicName": "حرف ابتداء",
+      "Description": "Inceptive particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "INT",
+      "ArabicName": "حرف تفسير",
+      "Description": "Particle of interpretation",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "INTG",
+      "ArabicName": "حرف استفهام",
+      "Description": "Interogative particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "NEG",
+      "ArabicName": "حرف نفي",
+      "Description": "Negative particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "PREV",
+      "ArabicName": "حرف كاف",
+      "Description": "Preventive particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "PRO",
+      "ArabicName": "حرف نهي",
+      "Description": "Prohibition particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "REM",
+      "ArabicName": "حرف استئنافية",
+      "Description": "Resumption particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "RES",
+      "ArabicName": "أداة حصر",
+      "Description": "Restriction particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "RET",
+      "ArabicName": "حرف اضراب",
+      "Description": "Retraction particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "RSLT",
+      "ArabicName": "حرف واقع في جواب الشرط",
+      "Description": "Result particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "SUP",
+      "ArabicName": "حرف زائد",
+      "Description": "Supplemental particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "SUR",
+      "ArabicName": "حرف فجاءة",
+      "Description": "Surprise particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "VOC",
+      "ArabicName": "حرف نداء",
+      "Description": "Vocative particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "ATT",
+      "ArabicName": "حرف تنبيه",
+      "Description": "Attention particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "DIST",
+      "ArabicName": "لام البعد",
+      "Description": "Distant lām",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "ADDR",
+      "ArabicName": "حرف خطاب",
+      "Description": "Address particle",
+      "Category": "Particles"
+    },
+    {
+      "Tag": "INL",
+      "ArabicName": "حروف مقطعة",
+      "Description": "Quranic initials",
+      "Category": "Disconnected Letters"
+    },
+    {
+      "Tag": "DET",
+      "ArabicName": "",
+      "Description": "Determiner",
+      "Category": "Determiner"
+    }
+  ],
+
+  "PrefixTags": [
+    {
+      "Tag": "Al+",
+      "Name": "determiner (al)",
+      "Description": "DET – determiner prefix (\"the\")"
+    },
+    {
+      "Tag": "bi+",
+      "Name": "preposition (bi)",
+      "Description": "P – preposition prefix (\"by\", \"with\", \"in\")"
+    },
+    {
+      "Tag": "ka+",
+      "Name": "preposition (ka)",
+      "Description": "P – preposition prefix (\"like\" or \"thus\")"
+    },
+    {
+      "Tag": "ta+",
+      "Name": "preposition (ta)",
+      "Description": "P – particle of oath prefix used as a preposition (\"by Allah\")"
+    },
+    {
+      "Tag": "sa+",
+      "Name": "future particle (sa)",
+      "Description": "P – prefixed particle indicating the future (\"they will\")"
+    },
+    {
+      "Tag": "ya+",
+      "Name": "vocative particle (yā)",
+      "Description": "VOC – a vocative prefix usually translated as \"O\""
+    },
+    {
+      "Tag": "ha+",
+      "Name": "vocative particle (hā)",
+      "Description": "VOC – a vocative prefix usually translated as \"Lo!\""
+    },
+    {
+      "Tag": "A:INTG+",
+      "Name": "interrogative particle (alif)",
+      "Description": "INTG – prefixed interrogative particle (\"is?\", \"did?\", \"do?\")"
+    },
+    {
+      "Tag": "A:EQ+",
+      "Name": "equalization particle (alif)",
+      "Description": "EQ – prefixed equalization particle (\"whether\")"
+    },
+    {
+      "Tag": "w:CONJ+",
+      "Name": "conjunction (wa)",
+      "Description": "CONJ – conjunction prefix (\"and\")"
+    },
+    {
+      "Tag": "w:REM+",
+      "Name": "resumption (wa)",
+      "Description": "REM – resumption prefix (\"then\" or \"so\")"
+    },
+    {
+      "Tag": "w:CIRC+",
+      "Name": "circumstantial (wa)",
+      "Description": "CIRC – circumstantial prefix (\"while\")"
+    },
+    {
+      "Tag": "w:SUP+",
+      "Name": "supplemental (wa)",
+      "Description": "SUP – supplemental prefix (\"then\" or \"so\")"
+    },
+    {
+      "Tag": "w:P+",
+      "Name": "preposition (wa)",
+      "Description": "P – particle of oath prefix used as a preposition (\"by the pen\")"
+    },
+    {
+      "Tag": "w:COM+",
+      "Name": "comitative (wa)",
+      "Description": "COM – comitative prefix (\"with\")"
+    },
+    {
+      "Tag": "f:REM+",
+      "Name": "resumption (fa)",
+      "Description": "REM – resumption prefix (\"then\" or \"so\")"
+    },
+    {
+      "Tag": "f:CONJ+",
+      "Name": "conjunction (fa)",
+      "Description": "CONJ – conjunction prefix (\"and\")"
+    },
+    {
+      "Tag": "f:RSLT+",
+      "Name": "result (fa)",
+      "Description": "RSLT – result prefix (\"then\")"
+    },
+    {
+      "Tag": "f:SUP+",
+      "Name": "supplemental (fa)",
+      "Description": "SUP – supplemental prefix (\"then\" or \"so\")"
+    },
+    {
+      "Tag": "f:CAUS+",
+      "Name": "cause (fa)",
+      "Description": "CAUS – cause prefix (\"then\" or \"so\")"
+    },
+    {
+      "Tag": "l:P+",
+      "Name": "preposition (lām)",
+      "Description": "P – the letter lām as a prefixed preposition"
+    },
+    {
+      "Tag": "l:EMPH+",
+      "Name": "emphasis (lām)",
+      "Description": "EMPH – the letter lām as a prefixed particle used to give emphasis"
+    },
+    {
+      "Tag": "l:PRP+",
+      "Name": "purpose (lām)",
+      "Description": "PRP – the letter lām as a prefixed particle used to indicate purpose"
+    },
+    {
+      "Tag": "l:IMPV+",
+      "Name": "imperative (lām)",
+      "Description": "IMPV – the letter lām as a prefixed particle used to form an imperative"
+    }
+  ],
+
+  "VerbTags": [
+    {
+      "Tag": "PERF",
+      "ArabicName": "فعل ماض",
+      "Description": "Perfect verb",
+      "Category": "Verb Aspects"
+    },
+    {
+      "Tag": "IMPF",
+      "ArabicName": "فعل مضارع",
+      "Description": "Imperfect verb",
+      "Category": "Verb Aspects"
+    },
+    {
+      "Tag": "IMPV",
+      "ArabicName": "فعل أمر",
+      "Description": "Imperative verb",
+      "Category": "Verb Aspects"
+    },
+    {
+      "Tag": "MOOD:IND",
+      "ArabicName": "مرفوع",
+      "Description": "Indicative mood",
+      "Category": "Verb Moods"
+    },
+    {
+      "Tag": "MOOD:SUBJ",
+      "ArabicName": "منصوب",
+      "Description": "Subjunctive mood",
+      "Category": "Verb Moods"
+    },
+    {
+      "Tag": "MOOD:JUS",
+      "ArabicName": "مجزوم",
+      "Description": "Jussive mood",
+      "Category": "Verb Moods"
+    },
+    {
+      "Tag": "ACT",
+      "ArabicName": "مبني للمعلوم",
+      "Description": "Active voice",
+      "Category": "Verb Voices"
+    },
+    {
+      "Tag": "PASS",
+      "ArabicName": "مبني للمجهول",
+      "Description": "Passive voice",
+      "Category": "Verb Voices"
+    },
+    {
+      "Tag": "1",
+      "ArabicName": "فَعَلَ",
+      "Description": "1st form", 
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "2",
+      "ArabicName": "فَعَّلَ",
+      "Description": "2nd form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "3",
+      "ArabicName": "فَاعَلَ",
+      "Description": "3rd form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "4",
+      "ArabicName": "أَفْعَلَ",
+      "Description": "4th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "5",
+      "ArabicName": "تَفَعَّلَ",
+      "Description": "5th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "6",
+      "ArabicName": "تَفَاعَلَ",
+      "Description": "6th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "7",
+      "ArabicName": "إِنْفَعَلَ",
+      "Description": "7th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "8",
+      "ArabicName": "إِفْتَعَلَ",
+      "Description": "8th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "9",
+      "ArabicName": "إِفْعَلَّ",
+      "Description": "9th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "10",
+      "ArabicName": "إِسْتَفْعَلَ",
+      "Description": "10th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "11",
+      "ArabicName": "",
+      "Description": "11th form",
+      "Category": "Verb Forms"
+    },
+    {
+      "Tag": "12",
+      "ArabicName": "",
+      "Description": "12th form",
+      "Category": "Verb Forms"
+    }
+  ],
+
+  "NominalTags": [
+    {
+      "Tag": "ACT_PCPL",
+      "ArabicName": "اسم فاعل",
+      "Description": "Active participle",
+      "Category": "Nominal Derivations"
+    },
+    {
+      "Tag": "PASS_PCPL",
+      "ArabicName": "اسم مفعول",
+      "Description": "Passive participle",
+      "Category": "Nominal Derivations"
+    },
+    {
+      "Tag": "VN",
+      "ArabicName": "مصدر",
+      "Description": "Verbal noun",
+      "Category": "Nominal Derivations"
+    },
+    {
+      "Tag": "DEF",
+      "ArabicName": "معرفة",
+      "Description": "Definite state",
+      "Category": "Nominal States"
+    },
+    {
+      "Tag": "INDEF",
+      "ArabicName": "نكرة",
+      "Description": "Indefinite state",
+      "Category": "Nominal States"
+    },
+    {
+      "Tag": "NOM",
+      "ArabicName": "مرفوع",
+      "Description": "Nominative case",
+      "Category": "Nominal Cases"
+    },
+    {
+      "Tag": "ACC",
+      "ArabicName": "منصوب",
+      "Description": "Accusative case",
+      "Category": "Nominal Cases"
+    },
+    {
+      "Tag": "GEN",
+      "ArabicName": "مجرور",
+      "Description": "Genitive case",
+      "Category": "Nominal Cases"
+    }
+  ]
+
+
+}

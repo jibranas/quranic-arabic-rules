@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css'
-import { BookOpen, List, User, ChevronRight, Brain, Volume2, Book } from 'lucide-react'
+import { BookOpen, List, User, ChevronRight, Brain, Volume2, Book, X } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Quiz } from "@/components/Quiz"
@@ -21,6 +21,9 @@ import { QuranOverlay } from "@/components/QuranOverlay"
 import { rules as initialRules } from '../../data/rules'
 import { verses as VERSE_DETAILS } from '../../data/verses'
 import { LettersOverlay } from "@/components/LettersOverlay"
+import { Question, QuestionType, Rule } from "@/types/arabic"
+import { QuizResults } from "@/components/QuizResults"
+import Lottie from "lottie-react"
 
 interface VerseDetail {
   arabic: string;
@@ -29,21 +32,6 @@ interface VerseDetail {
 
 interface VerseDetails {
   [key: string]: VerseDetail;
-}
-
-interface Question {
-  type: 'vocabulary' | 'grammar' | 'partsOfSpeech';
-  word: {
-    arabic: string;
-    translation: string;
-    rule: string;
-    surah: string;
-    ayah: number;
-    explanation: string;
-  };
-  question: string;
-  options: string[];
-  correctAnswer: string;
 }
 
 interface Example {
@@ -56,19 +44,28 @@ interface Example {
   ayah: number;
 }
 
-interface Rule {
-  title: string;
-  rule: string;
-  vocabulary: {
-    word: string;
-    translation: string;
-    type: string;
-  }[];
-  examples: Example[];
-}
-
 interface WordsTabProps {
   quizResults: { [key: string]: boolean[] };
+}
+
+// Add new interfaces
+interface InterludeSlide {
+  type: 'text' | 'image' | 'animation';
+  content: string;
+  duration?: number; // Optional duration for animations
+  caption?: string;  // Optional caption for images
+}
+
+interface Interlude {
+  id: string;
+  title: string;
+  slides: InterludeSlide[];
+}
+
+// Add to the Rule interface
+interface Rule {
+  // ... existing properties ...
+  interlude?: Interlude; // Optional interlude to show before the rule
 }
 
 const ArabicGrammarApp = () => {
@@ -93,6 +90,7 @@ const ArabicGrammarApp = () => {
   const [error, setError] = useState("")
   const [isSubmitSuccess, setIsSubmitSuccess] = useState(false)
   const [isQuizActive, setIsQuizActive] = useState(false);
+  const [showingResults, setShowingResults] = useState(false);
 
   const totalQuranWords = 77430 // Total words in the Quran
   const progress = (learnedWords.length / totalQuranWords) * 100
@@ -233,6 +231,7 @@ const ArabicGrammarApp = () => {
   };
 
   const navigateToRule = (rule: Rule) => {
+    // Go directly to the rule
     setSelectedRule(rule);
     setIsLearningActive(true);
   };
@@ -280,23 +279,27 @@ const ArabicGrammarApp = () => {
   };
 
   // Move these functions inside the component
-  const generateVocabularyQuestion = (word: Word): Question => {
-    // Get other translations as options, excluding the current word's translation
-    const otherTranslations = learnedWords
-      .filter(w => w.translation !== word.translation)
-      .map(w => w.translation);
+  const generateVocabularyQuestion = (word: Word, currentRule?: Rule): Question => {
+    let otherTranslations: string[] = [];
     
-    // Shuffle and take first 3 other translations
+    if (currentRule) {
+      // If we have a current rule (LearnOverlay context), use only its examples
+      otherTranslations = currentRule.examples
+        .filter(w => w.translation !== word.translation)
+        .map(w => w.translation);
+    } else {
+      // If no current rule (WordsTab context), use all available translations
+      otherTranslations = rules.flatMap(rule => [
+        ...rule.vocabulary.map(v => v.translation),
+        ...rule.examples.map(ex => ex.translation)
+      ]).filter(t => t !== word.translation && t.trim() !== '');
+    }
+    
     const otherOptions = shuffleArray(otherTranslations).slice(0, 3);
-    
-    // Always include the correct answer and shuffle final options
-    const options = shuffleArray([
-      word.translation,  // Ensure correct answer is included
-      ...otherOptions
-    ]);
+    const options = shuffleArray([word.translation, ...otherOptions]);
 
     return {
-      type: 'vocabulary',
+      type: 'vocabulary' as const,
       word,
       question: `What is the translation of: "${word.arabic}"?`,
       options,
@@ -305,23 +308,36 @@ const ArabicGrammarApp = () => {
   };
 
   const generateGrammarQuestion = (word: Word): Question => {
-    // Filter out the current rule to create options
+    // Find the rule that contains this example
+    const ruleWithExample = rules.find(rule => 
+      rule.examples.some(ex => ex.arabic === word.arabic)
+    );
+
+    const correctRule = ruleWithExample?.rule;
+
+    if (!correctRule) {
+      console.error('Could not find rule for word:', word.arabic);
+      return null;
+    }
+
     const otherRules = rules
       .map(r => r.rule)
-      .filter(rule => rule !== word.rule);
+      .filter(rule => rule !== correctRule && rule && rule.trim() !== '');
+
+    const options = shuffleArray([correctRule, ...otherRules.slice(0, 3)])
+      .filter(option => option && option.trim() !== '');
 
     return {
-      type: 'grammar',
+      type: 'grammar' as const,
       word,
       question: `What grammar rule is demonstrated in: "${word.arabic}"?`,
-      options: shuffleArray([word.rule, ...otherRules]).slice(0, 4),
-      correctAnswer: word.rule
+      options,
+      correctAnswer: correctRule
     };
   };
 
   const generatePartsOfSpeechQuestion = (word: Word): Question | null => {
-    // Handle verb-subject rule
-    if (word.rule.includes("verbs may come before the subject")) {
+    if (word.explanation.includes("verb") && word.explanation.includes("subject")) {
       const verbMatch = word.explanation.match(/The verb '([^']+)'/);
       const subjectMatch = word.explanation.match(/subject '([^']+)'/);
 
@@ -335,7 +351,7 @@ const ArabicGrammarApp = () => {
       if (isIdentifyPartQuestion) {
         const targetWord = Math.random() > 0.5 ? verb : subject;
         return {
-          type: 'partsOfSpeech',
+          type: 'partsOfSpeech' as const,
           word,
           question: `What part of speech is "${targetWord}" in "${word.arabic}"?`,
           options: ['Verb', 'Subject (Noun)'],
@@ -344,7 +360,7 @@ const ArabicGrammarApp = () => {
       } else {
         const targetPart = Math.random() > 0.5 ? 'verb' : 'subject';
         return {
-          type: 'partsOfSpeech',
+          type: 'partsOfSpeech' as const,
           word,
           question: `Which word is the ${targetPart} in "${word.arabic}"?`,
           options: [verb, subject],
@@ -353,8 +369,7 @@ const ArabicGrammarApp = () => {
       }
     }
     
-    // Handle adjective rule
-    if (word.rule.includes("adjectives come after the noun")) {
+    if (word.explanation.includes("adjective") && word.explanation.includes("noun")) {
       const nounMatch = word.explanation.match(/noun '([^']+)'/);
       const adjectiveMatch = word.explanation.match(/adjective '([^']+)'/);
 
@@ -368,7 +383,7 @@ const ArabicGrammarApp = () => {
       if (isIdentifyPartQuestion) {
         const targetWord = Math.random() > 0.5 ? noun : adjective;
         return {
-          type: 'partsOfSpeech',
+          type: 'partsOfSpeech' as const,
           word,
           question: `What part of speech is "${targetWord}" in "${word.arabic}"?`,
           options: ['Noun', 'Adjective'],
@@ -377,7 +392,7 @@ const ArabicGrammarApp = () => {
       } else {
         const targetPart = Math.random() > 0.5 ? 'noun' : 'adjective';
         return {
-          type: 'partsOfSpeech',
+          type: 'partsOfSpeech' as const,
           word,
           question: `Which word is the ${targetPart} in "${word.arabic}"?`,
           options: [noun, adjective],
@@ -389,7 +404,59 @@ const ArabicGrammarApp = () => {
     return null;
   };
 
- 
+  const handleStartQuiz = (selectedWords: Word[]) => {
+    // Create a pool of questions for each type
+    const vocabularyQuestions = selectedWords.map(word => generateVocabularyQuestion(word));
+
+    const grammarQuestions = selectedWords.map(word => generateGrammarQuestion(word));
+
+    const partsOfSpeechQuestions = selectedWords
+      .map(word => generatePartsOfSpeechQuestion(word))
+      .filter((q): q is Question => q !== null);
+
+    // Ensure we have at least one of each type where possible
+    const selectedQuestions: Question[] = [];
+
+    // Add one vocabulary question
+    if (vocabularyQuestions.length > 0) {
+      selectedQuestions.push(shuffleArray(vocabularyQuestions)[0]);
+    }
+
+    // Add one grammar question
+    if (grammarQuestions.length > 0) {
+      selectedQuestions.push(shuffleArray(grammarQuestions)[0]);
+    }
+
+    // Add one parts of speech question if available
+    if (partsOfSpeechQuestions.length > 0) {
+      selectedQuestions.push(shuffleArray(partsOfSpeechQuestions)[0]);
+    }
+
+    // Fill remaining slots with random questions from any type
+    const remainingSlots = 5 - selectedQuestions.length;
+    const remainingQuestions = shuffleArray([
+      ...vocabularyQuestions,
+      ...grammarQuestions,
+      ...partsOfSpeechQuestions
+    ]).filter(q => !selectedQuestions.some(sq => 
+      sq.word.arabic === q.word.arabic && sq.type === q.type
+    ));
+
+    selectedQuestions.push(...remainingQuestions.slice(0, remainingSlots));
+
+    setQuestions(shuffleArray(selectedQuestions));
+    setIsQuizActive(true);
+  };
+
+  const handleQuizComplete = (results: { [key: string]: boolean[] }) => {
+    // Update quiz results
+    setQuizResults(prev => ({
+      ...prev,
+      ...results
+    }));
+    setIsQuizActive(false);
+    setShowingResults(true);
+  };
 
   const WordsTab = ({ quizResults }: WordsTabProps) => {
     const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
@@ -409,19 +476,28 @@ const ArabicGrammarApp = () => {
       rule.vocabulary.map(v => v.word)
     );
 
-    // Group examples by vocabulary words using lemma
+    // Modify groupedWords to prevent duplicates
     const groupedWords = vocabularyWords.reduce((acc, vocabWord) => {
-      acc[vocabWord] = learnedWords.filter(example => {
-        // Find the original example in rules to get its lemma
-        const ruleExample = rules.flatMap(rule => rule.examples)
-          .find(ex => ex.arabic === example.arabic);
-        
-        // Handle both single lemma and array of lemmas
-        if (Array.isArray(ruleExample?.lemma)) {
-          return ruleExample.lemma.includes(vocabWord);
-        }
-        return ruleExample?.lemma === vocabWord;
-      });
+      // Filter out duplicates by using a Set of arabic text
+      const uniqueExamples = Array.from(
+        new Map(
+          learnedWords
+            .filter(example => {
+              // Find the original example in rules to get its lemma
+              const ruleExample = rules.flatMap(rule => rule.examples)
+                .find(ex => ex.arabic === example.arabic);
+              
+              // Handle both single lemma and array of lemmas
+              if (Array.isArray(ruleExample?.lemma)) {
+                return ruleExample.lemma.includes(vocabWord);
+              }
+              return ruleExample?.lemma === vocabWord;
+            })
+            .map(example => [example.arabic, example]) // Use arabic text as key for uniqueness
+        ).values()
+      );
+
+      acc[vocabWord] = uniqueExamples;
       return acc;
     }, {} as { [key: string]: typeof learnedWords });
 
@@ -766,10 +842,38 @@ const ArabicGrammarApp = () => {
       );
     };
 
+    // Add this new function to calculate overall stats
+    const calculateOverallStats = () => {
+      const allResults = Object.values(quizResults).flat();
+      if (allResults.length === 0) return null;
+
+      const totalWords = Object.keys(quizResults).length;
+      let greenCount = 0;
+      let yellowCount = 0;
+      let redCount = 0;
+
+      Object.keys(quizResults).forEach(arabic => {
+        const results = quizResults[arabic];
+        const correctCount = results.filter(r => r).length;
+        const percentage = (correctCount / results.length) * 100;
+
+        if (percentage === 100) greenCount++;
+        else if (percentage === 0) redCount++;
+        else yellowCount++;
+      });
+
+      return {
+        green: Math.round((greenCount / totalWords) * 100),
+        yellow: Math.round((yellowCount / totalWords) * 100),
+        red: Math.round((redCount / totalWords) * 100),
+        totalWords
+      };
+    };
+
     return (
       <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border p-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Learned Words</h2>
+          <h2 className="text-2xl font-bold">Learned Phrases</h2>
           <div className="flex gap-2">
             <Button
               variant={viewType === 'words' ? 'default' : 'outline'}
@@ -788,6 +892,73 @@ const ArabicGrammarApp = () => {
           </div>
         </div>
 
+        {/* Add Overall Performance Stats */}
+        {Object.keys(quizResults).length > 0 && (
+          <div className="mb-6 bg-white p-4 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-2">Overall Performance</h3>
+            {(() => {
+              const stats = calculateOverallStats();
+              if (!stats) return null;
+
+              const greenPhrases = Math.round((stats.green / 100) * stats.totalWords);
+              const yellowPhrases = Math.round((stats.yellow / 100) * stats.totalWords);
+              const redPhrases = Math.round((stats.red / 100) * stats.totalWords);
+
+              return (
+                <div className="space-y-3">
+                  {/* Percentages above bar */}
+                  <div className="flex justify-between text-sm">
+                    <span>{stats.green}%</span>
+                    <span>{stats.yellow}%</span>
+                    <span>{stats.red}%</span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="flex h-full">
+                      <div 
+                        className="bg-green-500 h-full" 
+                        style={{ width: `${stats.green}%` }}
+                      />
+                      <div 
+                        className="bg-yellow-500 h-full" 
+                        style={{ width: `${stats.yellow}%` }}
+                      />
+                      <div 
+                        className="bg-red-500 h-full" 
+                        style={{ width: `${stats.red}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Labels below bar */}
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <div className="text-center">
+                      <span>({greenPhrases} phrases)</span><br />
+                      <span>Mastered</span>
+                    </div>
+                    <div className="text-center">
+                      <span>({yellowPhrases} phrases)</span><br />
+                      <span>Learning</span>
+                    </div>
+                    <div className="text-center">
+                      <span>({redPhrases} phrases)</span><br />
+                      <span>Needs Work</span>
+                    </div>
+                  </div>
+
+                  {/* Total Phrases */}
+                  <div className="text-center mt-4">
+                    <div className="text-base font-medium">
+                      Total Phrases: {stats.totalWords}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {/* Add Practice All Words button */}
         <div className="mb-4">
           <Button 
@@ -796,7 +967,7 @@ const ArabicGrammarApp = () => {
             size="lg"
             variant="default"
           >
-          <Brain className="h-4 w-4" />  Practice All 
+            <Brain className="h-4 w-4" />  Practice All 
           </Button>
         </div>
 
@@ -815,29 +986,74 @@ const ArabicGrammarApp = () => {
 
   const ContentsTab = () => {
     return (
-      <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border p-4">
-        <h2 className="text-2xl font-bold mb-4">Contents</h2>
-        <div className="space-y-2">
-          {/* Add Letters section */}
-          <button
-            onClick={() => setIsLettersActive(true)}
-            className="w-full p-4 text-left bg-white rounded-lg shadow hover:bg-gray-50 transition-colors"
-          >
-            <h3 className="font-semibold text-lg mb-1">Arabic Letters</h3>
-            <p className="text-sm text-gray-600">Learn the Arabic alphabet and their pronunciations</p>
-          </button>
+      <ScrollArea className="h-[calc(100vh-200px)] w-full p-4">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold">Arabic Grammar</h2>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>LEVEL 1</span>
+            <span>•</span>
+            <span>Foundations</span>
+          </div>
+        </div>
 
-          {/* Existing rules */}
-          {rules.map((rule, index) => (
-            <button
-              key={index}
-              onClick={() => navigateToRule(rule)}
-              className="w-full p-4 text-left bg-white rounded-lg shadow hover:bg-gray-50 transition-colors"
-            >
-              <h3 className="font-semibold text-lg mb-1">{rule.title}</h3>
-              <p className="text-sm text-gray-600">{rule.rule}</p>
-            </button>
-          ))}
+        <div className="relative">
+          {/* Progress line running through the middle */}
+          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
+
+          <div className="space-y-8">
+            {/* Letters section */}
+            <div className="relative">
+              <div className="flex items-start gap-4">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center z-10 relative">
+                    <span className="text-emerald-600 text-xl">أ</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsLettersActive(true)}
+                  className="flex-1 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-4"
+                >
+                  <h3 className="font-semibold text-lg mb-1 text-left">Arabic Letters</h3>
+                  <p className="text-sm text-gray-600 text-left">Learn the Arabic alphabet and their pronunciations</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Rules */}
+            {rules.map((rule, index) => (
+              <div key={index} className="relative">
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center z-10 relative">
+                      <span className="text-gray-600 text-xl">{index + 1}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigateToRule(rule)}
+                    className="flex-1 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-4"
+                  >
+                    <h3 className="font-semibold text-lg mb-1 text-left">{rule.title}</h3>
+                    <p className="text-sm text-gray-600 text-left">{rule.rule}</p>
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Practice section at the end */}
+            <div className="relative">
+              <div className="flex items-start gap-4">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl bg-gray-200 flex items-center justify-center z-10 relative">
+                    <span className="text-gray-600">✓</span>
+                  </div>
+                </div>
+                <div className="flex-1 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-4">
+                  <h3 className="font-semibold text-lg mb-1 text-gray-400">Practice All</h3>
+                  <p className="text-sm text-gray-400">Complete all lessons to unlock practice mode</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </ScrollArea>
     );
@@ -913,24 +1129,32 @@ const ArabicGrammarApp = () => {
       {isQuizActive && questions.length > 0 && (
         <QuizOverlay
           questions={questions}
-          onComplete={(newResults) => {
+          onComplete={handleQuizComplete}
+          onClose={() => setIsQuizActive(false)}
+        />
+      )}
+
+      {showingResults && (
+        <QuizResults
+          questions={questions}
+          quizResults={quizResults}
+          onComplete={(learnedWords, results) => {
+            // Update learned words and quiz results
+            setLearnedWords(prev => [...prev, ...learnedWords]);
             setQuizResults(prev => ({
               ...prev,
-              ...newResults
+              ...results
             }));
-            setIsQuizActive(false);
+            setShowingResults(false);
           }}
-          onClose={() => setIsQuizActive(false)}
         />
       )}
 
       {isLearningActive && selectedRule && (
         <LearnOverlay
           rule={selectedRule}
-          verseDetails={VERSE_DETAILS}
           onComplete={(newLearnedWords, newQuizResults) => {
             setLearnedWords(prev => [...prev, ...newLearnedWords]);
-            // Merge new quiz results with existing ones
             setQuizResults(prev => ({
               ...prev,
               ...newQuizResults
@@ -942,6 +1166,9 @@ const ArabicGrammarApp = () => {
             setIsLearningActive(false);
             setSelectedRule(null);
           }}
+          generateVocabularyQuestion={generateVocabularyQuestion}
+          generateGrammarQuestion={generateGrammarQuestion}
+          generatePartsOfSpeechQuestion={generatePartsOfSpeechQuestion}
         />
       )}
 
