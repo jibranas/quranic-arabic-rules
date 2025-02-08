@@ -1,20 +1,34 @@
 export interface Example {
-  arabic: string;
-  lemma: string | string[];
-  translation: string;
-  explanation: string;
-  surah: string;
-  audio: string;
-  ayah: number;
+  surahId: number;
+  ayahNo: number;
+  words: Array<{
+    wordNo: number;
+    segmentNo?: number;  // Add optional segmentNo
+  }>;
+  morphologyData?: {
+    lemmaArabic: string;
+    lemmaCode: string;
+    pos: string;
+  }[];
+  explanation?: string;
+  beforeInterlude?: {
+    type: string;
+    content: string;
+    caption?: string;
+  }[];
+  afterInterlude?: {
+    type: string;
+    content: string;
+    caption?: string;
+  }[];
 }
 
 export interface Rule {
   title: string;
   rule: string;
-  vocabulary: {
-    word: string;
-    translation: string;
+  introInterlude?: {
     type: string;
+    content: string;
   }[];
   examples: Example[];
   conclusionInterlude?: {
@@ -63,40 +77,116 @@ export const rules: Rule[] = [
     ],
     examples: [
       {
-        arabic: "يَعْلَمُ مَا فِي السَّمَاوَاتِ",
-        lemma: ["يَعْلَمُ", "مَا", "فِي", "سَمَاءٌ"],
-        translation: "He knows what is in the heavens",
-        explanation: "Contains: Fi'l (يَعْلَمُ - knows), Ism (مَا - what), Ḥarf (فِي - in), and Ism (السَّمَاوَاتِ - the heavens)",
-        surah: "Al-Hujurat",
-        audio: "https://verses.quran.com/49/16.mp3",
-        ayah: 16
+        surahId: 105,
+        ayahNo: 3,
+        words: [{ wordNo: 1, segmentNo: 1 }],
+        explanation: "Contains: Ḥarf (and)",
+
+        beforeInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Understanding Ḥarf (حرف)</h3>
+              <p>Ḥarf is a particle that connects and modifies other words. It is essential for creating meaningful sentences.</p>
+            `
+          }
+        ],
+        afterInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Example of Ḥarf</h3>
+              <p>In this example, the word "and" is a Ḥarf, connecting different parts of the sentence.</p>
+            `
+          }
+        ]
       },
       {
-        arabic: "وَاللَّهُ غَفُورٌ رَّحِيمٌ",
-        lemma: ["وَ", "اللهُ", "غَفُورٌ", "رَحِيمٌ"],
-        translation: "And Allah is Forgiving and Merciful",
-        explanation: "Contains: Ḥarf (وَ - and), Ism (اللَّهُ - Allah), Ism (غَفُورٌ - Forgiving), and Ism (رَحِيمٌ - Merciful)",
-        surah: "An-Nur",
-        audio: "https://verses.quran.com/24/22.mp3",
-        ayah: 22
+        surahId: 105,
+        ayahNo: 3,
+        words: [{ wordNo: 1}],
+        explanation: "Contains: Fi'l (sent)",
+        beforeInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Understanding Fi'l (فعل)</h3>
+              <p>Fi'l is a verb that represents actions or states. It is the energy that moves things in a sentence.</p>
+            `
+          }
+        ],
+        afterInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Example of Fi'l</h3>
+              <p>In this example, the word "sent" is a Fi'l, indicating an action.</p>
+            `
+          }
+        ]
       },
       {
-        arabic: "إِنَّا فَتَحْنَا لَكَ",
-        lemma: ["إِنَّ", "فَتَحَ", "لِ"],
-        translation: "Indeed, We have granted you",
-        explanation: "Contains: Ḥarf (إِنَّ - indeed), Fi'l (فَتَحْنَا - we opened/granted), and Ḥarf (لَ - for) with attached pronoun",
-        surah: "Al-Fath",
-        audio: "https://verses.quran.com/48/1.mp3",
-        ayah: 1
+        surahId: 105,
+        ayahNo: 3,
+        words: [{ wordNo: 3 }],
+        explanation: "Contains: Ism (against)",
+        beforeInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Understanding Ism (اسم)</h3>
+              <p>Ism is a noun that represents persons, places, things, or qualities. It is the building block of sentences.</p>
+            `
+          }
+        ],
+        afterInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Example of Ism</h3>
+              <p>In this example, the word "against" is an Ism, representing a concept.</p>
+            `
+          }
+        ]
       },
       {
-        arabic: "قُلْ هُوَ اللَّهُ أَحَدٌ",
-        lemma: ["قَالَ", "هُوَ", "اللهُ", "أَحَدٌ"],
-        translation: "Say, 'He is Allah, [who is] One'",
-        explanation: "Contains: Fi'l (قُلْ - say), Ism (هُوَ - He), Ism (اللَّهُ - Allah), and Ism (أَحَدٌ - One)",
-        surah: "Al-Ikhlas",
-        audio: "https://verses.quran.com/112/1.mp3",
-        ayah: 1
+        surahId: 105,
+        ayahNo: 3,
+        words: [
+          { wordNo: 1 },
+          { wordNo: 2 },
+          { wordNo: 3 }
+        ],
+        explanation: "Contains: Ḥarf (and), Fi'l (sent), Ism (against)",
+        beforeInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Combining the Elements</h3>
+              <p>Now, let's see how these elements come together to form a meaningful sentence.</p>
+            `
+          }
+        ],
+        afterInterlude: [
+          {
+            type: "text",
+            content: `
+              <h3>Full Example</h3>
+              <p>In this example, we have a Ḥarf (and), a Fi'l (sent), and an Ism (against) working together to convey a complete idea.</p>
+            `
+          }
+        ]
+      },
+      {
+        surahId: 106,
+        ayahNo: 4,
+        words: [
+          { wordNo: 1 },
+          { wordNo: 2 },
+          { wordNo: 3 },
+          { wordNo: 4 }
+        ],
+        explanation: "Contains: Ḥarf (for), Ism (the protection), Ism (of), and Ism (Quraysh)"
       }
     ],
     conclusionInterlude: [
@@ -122,16 +212,6 @@ export const rules: Rule[] = [
           </div>
         `
       }
-    ],
-    vocabulary: [
-      { word: "اللَّهُ", translation: "Allah", type: "Ism (Noun)" },
-      { word: "فَتَحَ", translation: "to open/grant", type: "Fi'l (Verb)" },
-      { word: "يَعْلَمُ", translation: "knows", type: "Fi'l (Verb)" },
-      { word: "إِنَّ", translation: "indeed", type: "Ḥarf (Particle)" },
-      { word: "فِي", translation: "in", type: "Ḥarf (Particle)" },
-      { word: "لِ", translation: "for", type: "Ḥarf (Particle)" },
-      { word: "سَمَاءٌ", translation: "heaven", type: "Ism (Noun)" },
-      { word: "غَفُورٌ", translation: "Forgiving", type: "Ism (Noun)" }
     ]
   },
   {
@@ -164,31 +244,22 @@ export const rules: Rule[] = [
     ],
     examples: [
       {
-        arabic: "نَارٌ",
-        lemma: ["نَارٌ"],
-        translation: "a fire",
-        explanation: "The word has tanween damma (ـٌ) indicating it is an indefinite noun in the nominative case",
-        surah: "Al-Qariah",
-        audio: "https://verses.quran.com/101/11.mp3",
-        ayah: 11
+        surahId: 101,
+        ayahNo: 11,
+        words: [1],
+        explanation: "The word has tanween damma (ـٌ) indicating it is an indefinite noun in the nominative case"
       },
       {
-        arabic: "مَالًا",
-        lemma: ["مَالًا"],
-        translation: "wealth",
-        explanation: "The word has tanween fatha (ـً) indicating it is an indefinite noun in the accusative case",
-        surah: "Al-Humazah",
-        audio: "https://verses.quran.com/104/2.mp3",
-        ayah: 2
+        surahId: 104,
+        ayahNo: 2,
+        words: [1],
+        explanation: "The word has tanween fatha (ـً) indicating it is an indefinite noun in the accusative case"
       },
       {
-        arabic: "هُمَزَةٍ",
-        lemma: ["هُمَزَةٍ"],
-        translation: "a slanderer",
-        explanation: "The word has tanween kasra (ـٍ) indicating it is an indefinite noun in the genitive case",
-        surah: "Al-Humazah",
-        audio: "https://verses.quran.com/104/1.mp3",
-        ayah: 1
+        surahId: 104,
+        ayahNo: 1,
+        words: [1],
+        explanation: "The word has tanween kasra (ـٍ) indicating it is an indefinite noun in the genitive case"
       }
     ],
     conclusionInterlude: [
@@ -206,137 +277,83 @@ export const rules: Rule[] = [
           </div>
         `
       }
-    ],
-    vocabulary: [
-      { word: "نَارٌ", translation: "fire", type: "Ism (Noun)" },
-      { word: "مَالًا", translation: "wealth", type: "Ism (Noun)" },
-      { word: "هُمَزَةٍ", translation: "slanderer", type: "Ism (Noun)" }
     ]
   },
   {
     title: "Verb-Subject Order",
     rule: "In Arabic, verbs may come before the subject in a sentence.",
-    vocabulary: [
-      { word: "اللهُ", translation: "Allah", type: "Ism (Noun)" },
-      { word: "يَخْلُقُ", translation: "Creates", type: "Fa'l (Verb)" },
-      { word: "يَعْلَمُ", translation: "Knows", type: "Fa'l (Verb)" },
-      { word: "قَالَ", translation: "Said", type: "Fa'l (Verb)" },
-    ],
     examples: [
       {
-        arabic: "قَالَ اللهُ",
-        lemma: ["قَالَ", "اللهُ"],
-        translation: "Allah said",
-        explanation: "The verb 'قَالَ' (said) comes before the subject 'اللهُ' (Allah).",
-        surah: "Al-Maidah",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled.mp3",
-        ayah: 116
+        surahId: 2,
+        ayahNo: 30,
+        words: [1, 2],
+        explanation: "The verb 'قَالَ' (said) comes before the subject 'رَبُّكَ' (your Lord)."
       },
       {
-        arabic: "يَعْلَمُ اللهُ",
-        lemma: ["يَعْلَمُ", "اللهُ"],
-        translation: "Allah knows",
-        explanation: "The verb 'يَعْلَمُ' (knows) comes before the subject 'اللهُ' (Allah).",
-        surah: "An-Nisa",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-2.mp3",
-        ayah: 63
+        surahId: 3,
+        ayahNo: 37,
+        words: [1, 2],
+        explanation: "The verb 'تَقَبَّلَ' (accepted) comes before the subject 'رَبُّهَا' (her Lord)."
       },
       {
-        arabic: "يَخْلُقُ اللهُ",
-        lemma: ["يَخْلُقُ", "اللهُ"],
-        translation: "Allah created",
-        explanation: "The verb 'يَخْلُقُ' (creates) comes before the subject 'اللهُ' (Allah).",
-        surah: "An-Nur",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-3.mp3",
-        ayah: 45
+        surahId: 7,
+        ayahNo: 54,
+        words: [1, 2],
+        explanation: "The verb 'خَلَقَ' (created) comes before the subject 'رَبُّكُمُ' (your Lord)."
       },
       {
-        arabic: "يُرِيدُ اللهُ",
-        lemma: ["يُرِيدُ", "اللهُ"],
-        translation: "Allah wishes",
-        explanation: "The verb 'يُرِيدُ' (wishes) comes before the subject 'اللهُ' (Allah).",
-        surah: "An-Nisa",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-4.mp3",
-        ayah: 26
+        surahId: 26,
+        ayahNo: 26,
+        words: [1, 2],
+        explanation: "The verb 'يُرِيدُ' (wishes) comes before the subject 'اللهُ' (Allah)."
       }
     ]
   },
   {
     title: "Adjective Order",
     rule: "In Arabic, adjectives come after the noun they describe.",
-    vocabulary: [
-      { word: "كِتَابٌ", translation: "letter/book", type: "Ism (Noun)" },
-      { word: "كَرِيمٌ", translation: "noble", type: "Ism (Noun)" },
-      { word: "آمِنًا", translation: "secure", type: "Ism (Noun)" },
-      { word: "بَلَدًا", translation: "city", type: "Ism (Noun)" },
-      { word: "أَلِيمٌ", translation: "painful", type: "Ism (Noun)" },
-      { word: "عَذَابٌ", translation: "punishment", type: "Ism (Noun)" },
-    ],
     examples: [
       {
-        arabic: "كِتَابٌ كَرِيمٌ",
-        lemma: ["كِتَابٌ", "كَرِيمٌ"],
-        translation: "A noble letter",
-        explanation: "The adjective 'كَرِيمٌ' (noble) comes after the noun 'كِتَابٌ' (letter).",
-        surah: "An-Naml",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-5.mp3",
-        ayah: 29
+        surahId: 29,
+        ayahNo: 29,
+        words: [1, 2],
+        explanation: "The adjective 'كَرِيمٌ' (noble) comes after the noun 'كِتَابٌ' (letter)."
       },
       {
-        arabic: "بَلَدًا آمِنًا",
-        lemma: ["بَلَدًا", "آمِنًۭا"],
-        translation: "A secure city",
-        explanation: "The adjective 'ءَامِنًۭا' (secure) comes after the noun 'بَلَدًا' (city).",
-        surah: "Al-Baqarah",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-6.mp3",
-        ayah: 126
+        surahId: 126,
+        ayahNo: 126,
+        words: [1, 2],
+        explanation: "The adjective 'ءَامِنًۭا' (secure) comes after the noun 'بَلَدًا' (city)."
       },
       {
-        arabic: "عَذَابٌ أَلِيمٌ",
-        lemma: ["عَذَابٌ", "أَلِيمٌ"],
-        translation: "A painful punishment",
-        explanation: "The adjective 'أَلِيمٌ' (painful) comes after the noun 'عَذَابٌ' (punishment).",
-        surah: "Al-Baqarah",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-7.mp3",
-        ayah: 10
+        surahId: 10,
+        ayahNo: 10,
+        words: [1, 2],
+        explanation: "The adjective 'أَلِيمٌ' (painful) comes after the noun 'عَذَابٌ' (punishment)."
       }
     ]
   },
   {
     title: "Definite Article",
     rule: "In Arabic, the definite article 'ال' (al) is attached to the beginning of a word to make it definite.",
-    vocabulary: [
-      { word: "كِتَابٌ", translation: "book", type: "Ism (Noun)" },
-      { word: "رَحِيمٌ", translation: "Merciful", type: "Ism (Noun)" },
-      { word: "عَالَمٌ", translation: "world", type: "Ism (Noun)" },
-    ],
     examples: [
       {
-        arabic: "الْكِتَابُ",
-        lemma: "كِتَابٌ",
-        translation: "The book",
-        explanation: "The definite article 'ال' is attached to 'كِتَابُ' (book) to make it 'the book'.",
-        surah: "Al-Baqarah",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-8.mp3",
-        ayah: 2
+        surahId: 2,
+        ayahNo: 2,
+        words: [1],
+        explanation: "The definite article 'ال' is attached to 'كِتَابُ' (book) to make it 'the book'."
       },
       {
-        arabic: "الرَّحِيمِ",
-        lemma: "رَحِيمٌ",
-        translation: "The Most Merciful",
-        explanation: "The definite article 'ال' is attached to 'رَحِيمٌ' (Merciful) to make it 'the Most Merciful'.",
-        surah: "Al-Fatihah",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-9.mp3",
-        ayah: 3
+        surahId: 1,
+        ayahNo: 3,
+        words: [1],
+        explanation: "The definite article 'ال' is attached to 'رَحِيمٌ' (Merciful) to make it 'the Most Merciful'."
       },
       {
-        arabic: "الْعَالَمِينَ",
-        lemma: "عَالَمٌ",
-        translation: "The worlds",
-        explanation: "The definite article 'ال' is attached to 'عَالَمِينَ' (worlds) to make it 'the worlds'.",
-        surah: "Al-Fatihah",
-        audio: "https://hhcourses-assets.s3.us-east-2.amazonaws.com/General/Audio/grammar/untitled-10.mp3",
-        ayah: 2
+        surahId: 2,
+        ayahNo: 2,
+        words: [1],
+        explanation: "The definite article 'ال' is attached to 'عَالَمِينَ' (worlds) to make it 'the worlds'."
       }
     ]
   },
@@ -362,79 +379,22 @@ export const rules: Rule[] = [
     ],
     examples: [
       {
-        arabic: "عَلِمَ",
-        lemma: ["عَلِمَ"],
-        translation: "he knew",
-        explanation: "Basic form (Pattern I) - indicates simple knowledge",
-        surah: "Al-Baqarah",
-        audio: "https://audio-url.com/2-60.mp3",
-        ayah: 60,
-        afterInterlude: [
-          {
-            type: "text",
-            content: `
-              <h4>Pattern I (فَعِلَ)</h4>
-              <p>This is the basic form of the verb. It usually indicates a simple action or state.</p>
-              <ul class="list-disc pl-4 mt-2">
-                <li>No prefix</li>
-                <li>No doubling of letters</li>
-                <li>Basic meaning</li>
-              </ul>
-            `
-          }
-        ]
+        surahId: 2,
+        ayahNo: 60,
+        words: [1],
+        explanation: "Basic form (Pattern I) - indicates simple knowledge"
       },
       {
-        arabic: "عَلَّمَ",
-        lemma: ["عَلَّمَ"],
-        translation: "he taught",
-        explanation: "Pattern II with shadda - indicates causing someone to know",
-        surah: "Al-Baqarah",
-        audio: "https://audio-url.com/2-31.mp3",
-        ayah: 31,
-        beforeInterlude: [
-          {
-            type: "text",
-            content: `
-              <h4>Now, watch what happens when we add a shadda!</h4>
-              <p>Adding a shadda (ّ) to the middle letter transforms the meaning from "to know" into "to make someone know" (i.e., to teach).</p>
-            `
-          }
-        ],
-        afterInterlude: [
-          {
-            type: "text",
-            content: `
-              <div class="bg-blue-50 p-4 rounded-lg">
-                <h4 class="font-bold text-blue-900">Pattern II (فَعَّلَ)</h4>
-                <p class="text-blue-800">The shadda makes the verb:</p>
-                <ul class="list-disc pl-4 mt-2 text-blue-800">
-                  <li>Causative (make someone do something)</li>
-                  <li>Intensive (do something intensively)</li>
-                  <li>Transitive (takes an object)</li>
-                </ul>
-              </div>
-            `
-          }
-        ]
+        surahId: 2,
+        ayahNo: 31,
+        words: [1],
+        explanation: "Adding a shadda (ّ) to the middle letter transforms the meaning from 'to know' into 'to make someone know' (i.e., to teach)."
       },
       {
-        arabic: "تَعَلَّمَ",
-        lemma: ["تَعَلَّمَ"],
-        translation: "he learned",
-        explanation: "Pattern V with ta prefix - indicates actively acquiring knowledge",
-        surah: "Al-Baqarah",
-        audio: "https://audio-url.com/2-102.mp3",
-        ayah: 102,
-        beforeInterlude: [
-          {
-            type: "text",
-            content: `
-              <h4>Adding تَ to Pattern II</h4>
-              <p>When we add تَ to the beginning of a Pattern II verb, it often indicates doing the action to oneself.</p>
-            `
-          }
-        ]
+        surahId: 2,
+        ayahNo: 102,
+        words: [1],
+        explanation: "Adding تَ to Pattern II"
       }
     ],
     conclusionInterlude: [
@@ -457,17 +417,7 @@ export const rules: Rule[] = [
             </div>
           </div>
         `
-      },
-      // {
-      //   type: "animation",
-      //   content: JSON.stringify(yourLottieAnimation), // Your Lottie animation JSON
-      //   caption: "The transformation of verb patterns"
-      // }
-    ],
-    vocabulary: [
-      { word: "عَلِمَ", translation: "to know", type: "Fi'l (Verb)" },
-      { word: "عَلَّمَ", translation: "to teach", type: "Fi'l (Verb)" },
-      { word: "تَعَلَّمَ", translation: "to learn", type: "Fi'l (Verb)" }
+      }
     ]
   }
 ]; 

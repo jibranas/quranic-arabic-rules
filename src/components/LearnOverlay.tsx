@@ -11,15 +11,22 @@ import { QuizResults } from "@/components/QuizResults";
 import { Question, Word } from "@/types/arabic";
 import { fetchVerse } from '../../data/verses';
 import Lottie from 'lottie-react';
+import ExampleDisplay from './ExampleDisplay';
+
 
 interface Example {
-  arabic: string;
-  lemma: string | string[];
-  translation: string;
-  explanation: string;
-  surah: string;
-  audio: string;
-  ayah: number;
+  surahId: number;
+  ayahNo: number;
+  words: Array<{
+    wordNo: number;
+    segmentNo?: number;  // Add optional segmentNo
+  }>;
+  morphologyData?: {
+    lemmaArabic: string;
+    lemmaCode: string;
+    pos: string;
+  }[];
+  explanation?: string;
   beforeInterlude?: InterludeSlide[];
   afterInterlude?: InterludeSlide[];
 }
@@ -43,13 +50,42 @@ interface InterludeSlide {
   caption?: string;
 }
 
+interface VocabularyWord {
+  word: string;
+  translation: string;
+  type: string;
+}
+
+interface MorphologySegment {
+  lemmaArabic: string;
+  lemmaCode: string;
+  pos: string;
+  text: string;
+  type: string;
+}
+
+interface ExampleWithMorphology extends Example {
+  morphologyData?: MorphologySegment[][];  // Array of arrays - one array per word
+}
+
 interface LearnOverlayProps {
   rule: Rule;
-  onComplete: (learnedWords: { arabic: string; translation: string; rule: string; surah: string; ayah: number; explanation: string }[], quizResults: { [key: string]: boolean[] }) => void;
+  onComplete: (learnedWords: { 
+    surahId: number;
+    ayahNo: number;
+    words: Array<{
+      wordNo: number;
+      segmentNo?: number;
+    }>;
+    translation: string;
+    rule: string;
+    explanation?: string;
+  }[], quizResults: { [key: string]: boolean[] }) => void;
   onClose: () => void;
   generateVocabularyQuestion: (word: Word) => Question;
   generateGrammarQuestion: (word: Word) => Question;
   generatePartsOfSpeechQuestion: (word: Word) => Question | null;
+  quizResults: { [key: string]: boolean[] };
 }
 
 // Add this type if not already defined
@@ -93,13 +129,34 @@ const analyzePerformance = (
   };
 };
 
+// Add helper function to deduplicate text
+const deduplicateText = (text: string): string => {
+  const parts = text.split('');
+  let result = '';
+  let currentChar = '';
+  let count = 0;
+
+  for (const char of parts) {
+    if (char === currentChar) {
+      count++;
+    } else {
+      currentChar = char;
+      count = 1;
+      result += char;
+    }
+  }
+
+  return result;
+};
+
 export function LearnOverlay({ 
   rule, 
   onComplete, 
   onClose,
   generateVocabularyQuestion,
   generateGrammarQuestion,
-  generatePartsOfSpeechQuestion 
+  generatePartsOfSpeechQuestion,
+  quizResults 
 }: LearnOverlayProps) {
   const [visibleExamples, setVisibleExamples] = useState<number[]>([]);
   const [showingExamples, setShowingExamples] = useState(false);
@@ -108,12 +165,121 @@ export function LearnOverlay({
   const [selectedExample, setSelectedExample] = useState<Example | null>(null);
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [quizResults, setQuizResults] = useState<{ [key: string]: boolean[] }>({});
   const [showingResults, setShowingResults] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [maxVisibleIndex, setMaxVisibleIndex] = useState(-1);
+  const [loadedExamples, setLoadedExamples] = useState<ExampleWithMorphology[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [vocabularyList, setVocabularyList] = useState<VocabularyWord[]>([]);
+
+  // Add this useEffect to fetch morphology data when component mounts
+  useEffect(() => {
+    const fetchMorphologyData = async () => {
+      setIsLoading(true);
+      try {
+        const examplesWithMorphology = await Promise.all(
+          rule.examples.map(async (example) => {
+            // Fetch morphology data for each word in the example
+            const morphologyData = await Promise.all(
+              example.words.map(async (wordNo) => {
+                const response = await fetch('/api/morphology', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    surahId: example.surahId,
+                    ayahNo: example.ayahNo,
+                    wordNo
+                  })
+                });
+                
+                if (!response.ok) {
+                  throw new Error(`Morphology API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.segments || [];
+              })
+            );
+
+            return {
+              ...example,
+              morphologyData
+            };
+          })
+        );
+
+        setLoadedExamples(examplesWithMorphology);
+      } catch (error) {
+        console.error('Error fetching morphology data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMorphologyData();
+  }, [rule.examples]);
+
+  // Update the translation fetching useEffect
+  useEffect(() => {
+    const fetchTranslations = async () => {
+      const uniqueWords = new Map<string, VocabularyWord>();
+      
+      for (const example of loadedExamples) {
+        for (const [wordIndex, wordSegments] of example.morphologyData?.entries() || []) {
+          // Deduplicate segments and sort them
+          const uniqueSegments = Array.from(
+            new Map(
+              wordSegments
+                .sort((a, b) => (a.segmentNo || 0) - (b.segmentNo || 0))
+                .map(seg => [seg.segmentNo, seg])
+            ).values()
+          );
+
+          // Combine unique segments to form the complete word
+          const completeWord = uniqueSegments.map(s => s.text || '').join('');
+          
+          if (completeWord && !uniqueWords.has(completeWord)) {
+            const translationKey = `${example.surahId}:${example.ayahNo}:${example.words[wordIndex].wordNo}`;
+            
+            try {
+              const response = await fetch('/api/translation', {
+                method: 'POST',
+                body: JSON.stringify({ key: translationKey })
+              });
+
+              if (!response.ok) {
+                throw new Error(`Translation API error: ${response.status}`);
+              }
+
+              const data = await response.json();
+              const translation = data[translationKey] || 'Translation not available';
+
+              uniqueWords.set(completeWord, {
+                word: completeWord,
+                translation: translation,
+                // Use the type of the main segment (usually the first non-prefix segment)
+                type: uniqueSegments.find(s => s.pos)?.pos || 'Unknown'
+              });
+            } catch (error) {
+              console.error('Error fetching translation:', error);
+              uniqueWords.set(completeWord, {
+                word: completeWord,
+                translation: 'Translation error',
+                type: uniqueSegments.find(s => s.pos)?.pos || 'Unknown'
+              });
+            }
+          }
+        }
+      }
+      
+      setVocabularyList(Array.from(uniqueWords.values()));
+    };
+
+    if (loadedExamples.length > 0) {
+      fetchTranslations();
+    }
+  }, [loadedExamples]);
 
   // Update the learning sequence generation to use the rule prop
   const learningSequence = useMemo(() => {
@@ -231,11 +397,11 @@ export function LearnOverlay({
 
   const handleComplete = () => {
     const learnedWords = rule.examples.map(example => ({
-      arabic: example.arabic,
+      surahId: example.surahId,
+      ayahNo: example.ayahNo,
+      words: example.words,
       translation: example.translation,
       rule: rule.rule,
-      surah: example.surah,
-      ayah: example.ayah,
       explanation: example.explanation
     }));
     onComplete(learnedWords, quizResults);
@@ -334,17 +500,16 @@ export function LearnOverlay({
   if (showingWordSummary) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
-        <div className="p-4 flex justify-between items-center border-b">
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-6 w-6" />
+        <div className="border-b p-4 flex justify-between items-center">
+          <h2 className="text-xl font-bold">Words Learned2</h2>
+          <Button onClick={handleComplete} variant="ghost">
+            Complete <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
-          <h2 className="text-xl font-bold">New Words Learned</h2>
-          <div className="w-10" />
         </div>
         
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
-            {rule.vocabulary.map((word, index) => (
+            {vocabularyList.map((word, index) => (
               <motion.div
                 key={word.word}
                 initial={{ opacity: 0, y: 20 }}
@@ -355,7 +520,12 @@ export function LearnOverlay({
                 <div>
                   <p className="text-xl font-arabic mb-1">{word.word}</p>
                   <p className="text-sm text-gray-600">{word.translation}</p>
-                  <p className="text-xs text-gray-500">{word.type}</p>
+                  <p className="text-xs text-gray-500">
+                    {word.type === 'N' ? 'Noun' : 
+                     word.type === 'V' ? 'Verb' : 
+                     word.type === 'P' ? 'Particle' : 
+                     word.type}
+                  </p>
                 </div>
                 <motion.div
                   initial={{ scale: 0 }}
@@ -369,53 +539,43 @@ export function LearnOverlay({
             ))}
           </div>
         </ScrollArea>
+      </div>
+    );
+  }
 
-        <div className="p-4 border-t">
-          <Button 
-            onClick={handleStartQuiz}
-            className="w-full"
-          >
-            Start Practice Quiz
-          </Button>
+  // Add loading state handling
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+          <p className="text-gray-600">Loading lesson content...</p>
         </div>
       </div>
     );
   }
 
-  // Update the renderExample function to handle verse modal
-  const renderExample = (example: Example) => (
+  // Update the renderExample function to handle the new word format
+  const renderExample = (example: ExampleWithMorphology) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg shadow p-4"
+      className="mb-8 bg-gray-50 rounded-lg shadow-sm"
     >
-      <div className="text-right mb-4">
-        <div className="flex justify-end items-center gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => handleAudioPlay(example)}
-            className="h-8 w-8 text-blue-500"
-            title="Play Audio"
-          >
-            <Volume2 className="h-4 w-4" />
-          </Button>
-          <div className="text-2xl font-arabic">{example.arabic}</div>
-        </div>
-        <div className="text-lg text-gray-700">{example.translation}</div>
-        <button 
-          onClick={() => {
-            setSelectedExample(example);
-            setIsVerseModalOpen(true);
-          }}
-          className="text-xs mb-2 text-right text-blue-500 hover:text-blue-700 hover:underline block w-full"
-        >
-          Surah {example.surah}, Ayah {example.ayah}
-        </button>
-      </div>
-      <p className="text-sm text-gray-600 mb-4">
-        <strong>Explanation:</strong> {example.explanation}
-      </p>
+      <ExampleDisplay
+        surahId={example.surahId}
+        ayahNo={example.ayahNo}
+        words={example.words.map(word => ({
+          wordNo: typeof word === 'number' ? word : word.wordNo,
+          segmentNo: typeof word === 'number' ? undefined : word.segmentNo
+        }))}
+        exampleId={`${example.surahId}-${example.ayahNo}`}
+      />
+      {example.explanation && (
+        <p className="text-sm text-gray-600 mt-4 px-4 pb-4">
+          <strong>Explanation:</strong> {example.explanation}
+        </p>
+      )}
     </motion.div>
   );
 
@@ -521,7 +681,7 @@ const renderInterludeSlide = (slide: InterludeSlide) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="prose max-w-none w-full bg-white rounded-lg shadow p-6 mb-4"
+          className="prose max-w-none w-full"
         >
           <div dangerouslySetInnerHTML={{ __html: slide.content }} />
         </motion.div>
@@ -532,7 +692,6 @@ const renderInterludeSlide = (slide: InterludeSlide) => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-lg shadow p-6 mb-4"
         >
           <img 
             src={slide.content} 
@@ -552,7 +711,6 @@ const renderInterludeSlide = (slide: InterludeSlide) => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="bg-white rounded-lg shadow p-6 mb-4"
         >
           <Lottie
             animationData={JSON.parse(slide.content)}

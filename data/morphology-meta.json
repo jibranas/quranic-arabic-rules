@@ -301,122 +301,194 @@
     {
       "Tag": "Al+",
       "Name": "determiner (al)",
-      "Description": "DET – determiner prefix (\"the\")"
+      "Description": "DET – determiner prefix (\"the\")",
+      "PrefixType": "DET",
+      "LemmaBwNew": "Al",
+      "PrefixTranslation": "The"
     },
     {
       "Tag": "bi+",
       "Name": "preposition (bi)",
-      "Description": "P – preposition prefix (\"by\", \"with\", \"in\")"
+      "Description": "P – preposition prefix (\"by\", \"with\", \"in\")",
+      "PrefixType": "P",
+      "LemmaBwNew": "bi",
+      "PrefixTranslation": "By/With/In"
     },
     {
       "Tag": "ka+",
       "Name": "preposition (ka)",
-      "Description": "P – preposition prefix (\"like\" or \"thus\")"
+      "Description": "P – preposition prefix (\"like\" or \"thus\")",
+      "PrefixType": "P",
+      "LemmaBwNew": "ka",
+      "PrefixTranslation": "Like/Thus"
     },
     {
       "Tag": "ta+",
       "Name": "preposition (ta)",
-      "Description": "P – particle of oath prefix used as a preposition (\"by Allah\")"
+      "Description": "P – particle of oath prefix used as a preposition (\"by Allah\")",
+      "PrefixType": "P",
+      "LemmaBwNew": "ta",
+      "PrefixTranslation": "By Allah"
     },
     {
       "Tag": "sa+",
       "Name": "future particle (sa)",
-      "Description": "P – prefixed particle indicating the future (\"they will\")"
+      "Description": "FUT – prefixed particle indicating the future (\"they will\")",
+      "PrefixType": "FUT",
+      "LemmaBwNew": "sa",
+      "PrefixTranslation": "The will soon"
     },
     {
       "Tag": "ya+",
       "Name": "vocative particle (yā)",
-      "Description": "VOC – a vocative prefix usually translated as \"O\""
+      "Description": "VOC – a vocative prefix usually translated as \"O\"",
+      "PrefixType": "VOC",
+      "LemmaBwNew": "ya",
+      "PrefixTranslation": "O"
     },
     {
       "Tag": "ha+",
       "Name": "vocative particle (hā)",
-      "Description": "VOC – a vocative prefix usually translated as \"Lo!\""
+      "Description": "VOC – a vocative prefix usually translated as \"Lo!\"",
+      "PrefixType": "VOC",
+      "LemmaBwNew": "ha",
+      "PrefixTranslation": "Lo!"
     },
     {
       "Tag": "A:INTG+",
       "Name": "interrogative particle (alif)",
-      "Description": "INTG – prefixed interrogative particle (\"is?\", \"did?\", \"do?\")"
+      "Description": "INTG – prefixed interrogative particle (\"is?\", \"did?\", \"do?\")",
+      "PrefixType": "INTG",
+      "LemmaBwNew": "A",
+      "PrefixTranslation": "Is?/Did?/Do?"
     },
     {
       "Tag": "A:EQ+",
       "Name": "equalization particle (alif)",
-      "Description": "EQ – prefixed equalization particle (\"whether\")"
+      "Description": "EQ – prefixed equalization particle (\"whether\")",
+      "PrefixType": "EQ",
+      "LemmaBwNew": "A",
+      "PrefixTranslation": "Whether"
     },
-    {
+ {
       "Tag": "w:CONJ+",
       "Name": "conjunction (wa)",
-      "Description": "CONJ – conjunction prefix (\"and\")"
+      "Description": "CONJ – conjunction prefix (\"and\")",
+      "PrefixType": "CONJ",
+      "LemmaBwNew": "wa",
+      "PrefixTranslation": "And"
     },
     {
       "Tag": "w:REM+",
       "Name": "resumption (wa)",
-      "Description": "REM – resumption prefix (\"then\" or \"so\")"
+      "Description": "REM – resumption prefix (\"then\" or \"so\")",
+      "PrefixType": "REM",
+      "LemmaBwNew": "wa",
+      "PrefixTranslation": "Then/So"
     },
     {
       "Tag": "w:CIRC+",
       "Name": "circumstantial (wa)",
-      "Description": "CIRC – circumstantial prefix (\"while\")"
+      "Description": "CIRC – circumstantial prefix (\"while\")",
+      "PrefixType": "CIRC",
+      "LemmaBwNew": "wa",
+      "PrefixTranslation": "While"
     },
     {
       "Tag": "w:SUP+",
       "Name": "supplemental (wa)",
-      "Description": "SUP – supplemental prefix (\"then\" or \"so\")"
+      "Description": "SUP – supplemental prefix (\"then\" or \"so\")",
+      "PrefixType": "SUP",
+      "LemmaBwNew": "wa",
+      "PrefixTranslation": "Then/So"
     },
     {
       "Tag": "w:P+",
       "Name": "preposition (wa)",
-      "Description": "P – particle of oath prefix used as a preposition (\"by the pen\")"
+      "Description": "P – particle of oath prefix used as a preposition (\"by the pen\")",
+      "PrefixType": "P",
+      "LemmaBwNew": "wa",
+      "PrefixTranslation": "By"
     },
     {
       "Tag": "w:COM+",
       "Name": "comitative (wa)",
-      "Description": "COM – comitative prefix (\"with\")"
+      "Description": "COM – comitative prefix (\"with\")",
+      "PrefixType": "COM",
+      "LemmaBwNew": "wa",
+      "PrefixTranslation": "With"
     },
     {
       "Tag": "f:REM+",
       "Name": "resumption (fa)",
-      "Description": "REM – resumption prefix (\"then\" or \"so\")"
+      "Description": "REM – resumption prefix (\"then\" or \"so\")",
+      "PrefixType": "REM",
+      "LemmaBwNew": "fa",
+      "PrefixTranslation": "Then/So"
     },
     {
       "Tag": "f:CONJ+",
       "Name": "conjunction (fa)",
-      "Description": "CONJ – conjunction prefix (\"and\")"
+      "Description": "CONJ – conjunction prefix (\"and\")",
+      "PrefixType": "CONJ",
+      "LemmaBwNew": "fa",
+      "PrefixTranslation": "And"
     },
-    {
+   {
       "Tag": "f:RSLT+",
       "Name": "result (fa)",
-      "Description": "RSLT – result prefix (\"then\")"
+      "Description": "RSLT – result prefix (\"then\")",
+      "PrefixType": "RSLT",
+      "LemmaBwNew": "fa",
+      "PrefixTranslation": "Then"
     },
     {
       "Tag": "f:SUP+",
       "Name": "supplemental (fa)",
-      "Description": "SUP – supplemental prefix (\"then\" or \"so\")"
+      "Description": "SUP – supplemental prefix (\"then\" or \"so\")",
+      "PrefixType": "SUP",
+      "LemmaBwNew": "fa",
+      "PrefixTranslation": "Then/So"
     },
     {
       "Tag": "f:CAUS+",
       "Name": "cause (fa)",
-      "Description": "CAUS – cause prefix (\"then\" or \"so\")"
+      "Description": "CAUS – cause prefix (\"then\" or \"so\")",
+      "PrefixType": "CAUS",
+      "LemmaBwNew": "fa",
+      "PrefixTranslation": "Then/So"
     },
     {
       "Tag": "l:P+",
       "Name": "preposition (lām)",
-      "Description": "P – the letter lām as a prefixed preposition"
+      "Description": "P – the letter lām as a prefixed preposition",
+      "PrefixType": "P",
+      "LemmaBwNew": ["li","l~i"],
+      "PrefixTranslation": "For/To"
     },
     {
       "Tag": "l:EMPH+",
       "Name": "emphasis (lām)",
-      "Description": "EMPH – the letter lām as a prefixed particle used to give emphasis"
+      "Description": "EMPH – the letter lām as a prefixed particle used to give emphasis",
+      "PrefixType": "EMPH",
+      "LemmaBwNew": ["la","l~a"],
+      "PrefixTranslation": "Indeed"
     },
     {
       "Tag": "l:PRP+",
       "Name": "purpose (lām)",
-      "Description": "PRP – the letter lām as a prefixed particle used to indicate purpose"
+      "Description": "PRP – the letter lām as a prefixed particle used to indicate purpose",
+      "PrefixType": "PRP",
+      "LemmaBwNew": ["li","l~i"],
+      "PrefixTranslation": "So that"
     },
     {
       "Tag": "l:IMPV+",
       "Name": "imperative (lām)",
-      "Description": "IMPV – the letter lām as a prefixed particle used to form an imperative"
+      "Description": "IMPV – the letter lām as a prefixed particle used to form an imperative",
+      "PrefixType": "IMPV",
+      "LemmaBwNew": ["lo","li"],
+      "PrefixTranslation": "Let"
     }
   ],
 

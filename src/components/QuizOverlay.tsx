@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Word, Question } from "@/types/arabic";
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ExampleDisplay } from './ExampleDisplay';
 
 interface QuizOverlayProps {
   questions: Question[];
@@ -78,6 +79,14 @@ export function QuizOverlay({ questions, onComplete, onClose }: QuizOverlayProps
 
       {/* Quiz content */}
       <div className="pt-16 flex flex-col items-center justify-center p-8 space-y-6 h-full">
+        <div className="w-full max-w-2xl">
+          <ExampleDisplay
+            surahId={currentQuestion.word.surahId}
+            ayahNo={currentQuestion.word.ayahNo}
+            words={currentQuestion.word.words}
+          />
+        </div>
+
         <div className="text-2xl font-bold text-center max-w-[80%] mb-8">
           {currentQuestion.question}
         </div>

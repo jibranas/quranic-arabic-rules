@@ -28,26 +28,19 @@ export interface LearnedWord {
 }
 
 export interface Word {
-  arabic: string;
-  translation: string;
-  rule: string;
-  surah: string;
-  ayah: number;
-  explanation: string;
+  surahId: number;
+  ayahNo: number;
+  words: number[];
+  explanation?: string;
+  translation?: string;
+  rule?: string;
 }
 
 export type QuestionType = 'vocabulary' | 'grammar' | 'partsOfSpeech';
 
 export interface Question {
   type: QuestionType;
-  word: {
-    arabic: string;
-    translation: string;
-    explanation: string;
-    surah: string;
-    ayah: number;
-    rule?: string;
-  };
+  word: Word;
   question: string;
   options: string[];
   correctAnswer: string;

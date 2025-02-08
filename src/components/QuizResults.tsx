@@ -1,5 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { ExampleDisplay } from './ExampleDisplay';
 
 type QuestionType = 'vocabulary' | 'grammar' | 'partsOfSpeech';
 
@@ -149,6 +150,12 @@ export function QuizResults({ rule, questions, quizResults, onComplete }: QuizRe
                 key={index}
                 className={`${getPerformanceColor(word.arabic)} p-4 rounded-lg`}
               >
+                <ExampleDisplay
+                  surahId={word.surahId}
+                  ayahNo={word.ayahNo}
+                  words={word.words}
+                />
+                
                 <div className="text-right mb-2">
                   <div className="text-2xl font-arabic">{word.arabic}</div>
                   <div className="text-lg text-gray-700">{word.translation}</div>

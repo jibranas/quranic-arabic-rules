@@ -87,7 +87,7 @@ const ArabicGrammarApp = () => {
   const [isSignupOpen, setIsSignupOpen] = useState(false)
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState<string | null>(null)
   const [isSubmitSuccess, setIsSubmitSuccess] = useState(false)
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [showingResults, setShowingResults] = useState(false);
@@ -106,6 +106,8 @@ const ArabicGrammarApp = () => {
 
   // Add new state variable for LettersOverlay
   const [isLettersActive, setIsLettersActive] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(true);
 
   // Function to get vocabulary for covered examples
   const getCoveredVocabulary = () => {
@@ -1058,6 +1060,41 @@ const ArabicGrammarApp = () => {
       </ScrollArea>
     );
   };
+
+  useEffect(() => {
+    const initializeCache = async () => {
+      try {
+        const response = await fetch('/api/morphology');
+        if (!response.ok) {
+          throw new Error('Failed to initialize morphology cache');
+        }
+        console.log('Morphology cache initialized');
+      } catch (error) {
+        console.error('Failed to initialize morphology cache:', error);
+        setError('Failed to load morphology data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeCache();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen max-w-md mx-auto bg-gray-100 text-gray-800">
